@@ -56,6 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     let currentConfig = null; // e.g. "buffer_1_3_pre_40"
     let currentDist = 'unequal'; // "unequal" or "equal"
+    let currentRun = 'run_1'; // "run_1", "run_2", "run_3"
 
     // 14種已知參數設定
     const bufferRanges = [[1, 3], [1, 10], [1, 20], [1, 40], [10, 20], [10, 30], [20, 40]];
@@ -74,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         try {
             // 先測試是否能成功 fetch 第一份檔案 (確認伺服器環境/CORS沒問題)
-            const testPath = `reports/unequal_${knownConfigs[0]}/simulation_b_log.json`;
+            const testPath = `reports/run_1/unequal_${knownConfigs[0]}/simulation_b_log.json`;
             const res = await fetch(testPath, { method: 'HEAD' });
             if (!res.ok) throw new Error("HTTP error");
             
@@ -134,7 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 根據目前的 system, dist 與 config 載入資料 (改為按需 fetch)
     async function loadCurrentSelection() {
         if (!currentConfig) return;
-        const path = `reports/${currentDist}_${currentConfig}/simulation_${currentSystem.toLowerCase()}_log.json`;
+        const path = `reports/${currentRun}/${currentDist}_${currentConfig}/simulation_${currentSystem.toLowerCase()}_log.json`;
         
         fileNameDisplay.textContent = `正在讀取報表: ${path} ...`;
         
@@ -177,6 +178,17 @@ document.addEventListener("DOMContentLoaded", () => {
             sysBtns.forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
             currentSystem = e.target.dataset.system;
+            loadCurrentSelection();
+        });
+    });
+
+    // 模擬批次切換器
+    const runBtns = document.querySelectorAll('.run-btn');
+    runBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            runBtns.forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            currentRun = e.target.dataset.run;
             loadCurrentSelection();
         });
     });
@@ -230,9 +242,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (pathName.includes('_h_log')) system = 'h';
                         let configMatch = pathName.match(/buffer_\d+_\d+_pre_\d+/);
                         let distMatch = pathName.match(/(unequal|equal)_buffer/);
+                        let runMatch = pathName.match(/run_[1-3]/);
                         if (configMatch && distMatch) {
                             let dist = distMatch[1];
-                            allReports[`reports/${dist}_${configMatch[0]}/simulation_${system}_log.json`] = data;
+                            let run = runMatch ? runMatch[0] : 'run_1';
+                            allReports[`reports/${run}/${dist}_${configMatch[0]}/simulation_${system}_log.json`] = data;
                         } else {
                             // 若無正規格式，就直接存起來 (此情況下頁籤可能不會正常顯示，但這是一個 fallback)
                             allReports[pathName] = data;
