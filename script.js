@@ -718,7 +718,7 @@ function drawRtpDistributionChart(data) {
     }
 
     const binSizeSelect = document.getElementById('rtp-bin-size');
-    const binSize = binSizeSelect ? parseFloat(binSizeSelect.value) : 2;
+    const binSize = binSizeSelect ? parseFloat(binSizeSelect.value) : 1;
 
     const validData = data.filter(p => !isNaN(p.rtp) && isFinite(p.rtp));
     if (validData.length === 0) return;
