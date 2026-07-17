@@ -3,6 +3,7 @@ from simulator_b import run_simulation as run_sim_b
 from simulator_c import run_simulation as run_sim_c
 from simulator_e import run_simulation as run_sim_e
 from simulator_f import run_simulation as run_sim_f
+from simulator_g import run_simulation as run_sim_g
 
 def batch_run():
     buffer_ranges = [
@@ -26,6 +27,7 @@ def batch_run():
             output_c = os.path.join(reports_dir, dir_name, "simulation_c_log.json")
             output_e = os.path.join(reports_dir, dir_name, "simulation_e_log.json")
             output_f = os.path.join(reports_dir, dir_name, "simulation_f_log.json")
+            output_g = os.path.join(reports_dir, dir_name, "simulation_g_log.json")
             
             print(f"\n[{count}/{total}] 執行設定: Buffer {buf_min}~{buf_max}, Pre-fund {pre_fund_pct}%")
             
@@ -47,6 +49,12 @@ def batch_run():
                 buffer_max=buf_max, 
                 pre_fund=pre_fund, 
                 output_path=output_f
+            )
+            run_sim_g(
+                buffer_min=buf_min, 
+                buffer_max=buf_max, 
+                pre_fund=pre_fund, 
+                output_path=output_g
             )
             count += 1
             

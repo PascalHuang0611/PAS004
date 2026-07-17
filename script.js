@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const fetchPromises = [];
 
         knownConfigs.forEach(config => {
-            ['b', 'c', 'e', 'f'].forEach(sys => {
+            ['b', 'c', 'e', 'f', 'g'].forEach(sys => {
                 const path = `reports/${config}/simulation_${sys}_log.json`;
                 const p = fetch(path)
                     .then(res => {
@@ -174,6 +174,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (pathName.includes('_c_log')) system = 'c';
                         if (pathName.includes('_e_log')) system = 'e';
                         if (pathName.includes('_f_log')) system = 'f';
+                        if (pathName.includes('_g_log')) system = 'g';
                         let configMatch = pathName.match(/buffer_\d+_\d+_pre_\d+/);
                         if (configMatch) {
                             allReports[`reports/${configMatch[0]}/simulation_${system}_log.json`] = data;
