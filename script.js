@@ -10,6 +10,28 @@ let currentSortCol = null;
 let currentSortAsc = false; // 預設降冪排序
 let currentSystem = 'B';
 
+const CHART_COLORS = {
+    1: '#3b82f6',  // Blue
+    5: '#10b981',  // Emerald Green
+    10: '#f59e0b', // Amber/Orange
+    2: '#8b5cf6',  // Purple
+    20: '#ec4899', // Pink
+    50: '#06b6d4'  // Cyan
+};
+const FALLBACK_COLORS = ['#ef4444', '#64748b', '#14b8a6', '#f43f5e'];
+
+function getGroupColorHex(bet, fallbackIdx = 0) {
+    if (CHART_COLORS[bet]) return CHART_COLORS[bet];
+    return FALLBACK_COLORS[fallbackIdx % FALLBACK_COLORS.length];
+}
+
+function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const fileInput = document.getElementById('file-upload');
     const fileNameDisplay = document.getElementById('file-name');
@@ -345,7 +367,6 @@ function processData(data) {
     let overallTotalWins = 0;
     let overallTotalPlays = 0;
 
-    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
     let colorIdx = 0;
 
     for (const betStr in betGroups) {
@@ -383,7 +404,7 @@ function processData(data) {
         overallTotalWins += groupTotalWins;
         overallTotalPlays += groupTotalPlays;
         
-        const color = colors[colorIdx % colors.length];
+        const color = getGroupColorHex(bet, colorIdx);
         
         winRateDatasets.push({
             label: `Bet $${bet} (${group.players}人)`,
@@ -553,14 +574,6 @@ function drawStreakDistributionCharts(data) {
     const totalPlayers = validData.length;
     const winDatasets = [];
     const lossDatasets = [];
-    const colors = [
-        'rgba(54, 162, 235, 0.7)',
-        'rgba(255, 99, 132, 0.7)',
-        'rgba(75, 192, 192, 0.7)',
-        'rgba(255, 206, 86, 0.7)',
-        'rgba(153, 102, 255, 0.7)',
-        'rgba(255, 159, 64, 0.7)'
-    ];
     let colorIdx = 0;
 
     for (const betStr in betGroups) {
@@ -570,13 +583,15 @@ function drawStreakDistributionCharts(data) {
         const winPercentages = group.winBins.map(count => (count / totalPlayers) * 100);
         const lossPercentages = group.lossBins.map(count => (count / totalPlayers) * 100);
         
-        const color = colors[colorIdx % colors.length];
+        const hexColor = getGroupColorHex(bet, colorIdx);
+        const bgRgba = hexToRgba(hexColor, 0.7);
+        const borderRgba = hexToRgba(hexColor, 1.0);
         
         winDatasets.push({
             label: `Bet $${bet} (${group.players}人)`,
             data: winPercentages,
-            backgroundColor: color,
-            borderColor: color.replace('0.7', '1'),
+            backgroundColor: bgRgba,
+            borderColor: borderRgba,
             borderWidth: 1,
             stack: 'Stack 0',
             _rawCounts: group.winBins
@@ -585,8 +600,8 @@ function drawStreakDistributionCharts(data) {
         lossDatasets.push({
             label: `Bet $${bet} (${group.players}人)`,
             data: lossPercentages,
-            backgroundColor: color,
-            borderColor: color.replace('0.7', '1'),
+            backgroundColor: bgRgba,
+            borderColor: borderRgba,
             borderWidth: 1,
             stack: 'Stack 0',
             _rawCounts: group.lossBins
@@ -709,14 +724,6 @@ function drawRtpDistributionChart(data) {
 
     const totalPlayers = validData.length;
     const datasets = [];
-    const colors = [
-        'rgba(54, 162, 235, 0.7)',
-        'rgba(255, 99, 132, 0.7)',
-        'rgba(75, 192, 192, 0.7)',
-        'rgba(255, 206, 86, 0.7)',
-        'rgba(153, 102, 255, 0.7)',
-        'rgba(255, 159, 64, 0.7)'
-    ];
     let colorIdx = 0;
 
     for (const betStr in betGroups) {
@@ -724,13 +731,15 @@ function drawRtpDistributionChart(data) {
         const group = betGroups[bet];
         const percentages = group.bins.map(count => (count / totalPlayers) * 100);
         
-        const color = colors[colorIdx % colors.length];
+        const hexColor = getGroupColorHex(bet, colorIdx);
+        const bgRgba = hexToRgba(hexColor, 0.7);
+        const borderRgba = hexToRgba(hexColor, 1.0);
         
         datasets.push({
             label: `Bet $${bet} (${group.players}人)`,
             data: percentages,
-            backgroundColor: color,
-            borderColor: color.replace('0.7', '1'),
+            backgroundColor: bgRgba,
+            borderColor: borderRgba,
             borderWidth: 1,
             stack: 'Stack 0',
             _rawCounts: group.bins
