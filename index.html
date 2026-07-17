@@ -24,18 +24,20 @@
             </div>
 
             <div class="controls-section" id="controls-section" style="display: none;">
-                <!-- 模擬批次切換 -->
-                <div class="system-toggle" style="margin-bottom: 10px;">
-                    <span style="font-weight: bold; margin-right: 10px; color: var(--text-secondary); line-height: 2.2;">模擬批次:</span>
-                    <button class="sys-btn run-btn active" data-run="run_1">🎲 Run 1</button>
-                    <button class="sys-btn run-btn" data-run="run_2">🎲 Run 2</button>
-                    <button class="sys-btn run-btn" data-run="run_3">🎲 Run 3</button>
-                </div>
-                <!-- 玩家人數配置 -->
-                <div class="system-toggle" style="margin-bottom: 10px;">
-                    <span style="font-weight: bold; margin-right: 10px; color: var(--text-secondary); line-height: 2.2;">玩家配置:</span>
-                    <button class="sys-btn dist-btn active" data-dist="unequal">👥 不均等配置 (100/10/2)</button>
-                    <button class="sys-btn dist-btn" data-dist="equal">👥 均等配置 (每BET 100人)</button>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; width: 100%;">
+                    <!-- 模擬批次切換 -->
+                    <div class="system-toggle" style="margin-bottom: 10px;">
+                        <span style="font-weight: bold; margin-right: 10px; color: var(--text-secondary); line-height: 2.2;">模擬批次:</span>
+                        <button class="sys-btn run-btn active" data-run="run_1">🎲 Run 1</button>
+                        <button class="sys-btn run-btn" data-run="run_2">🎲 Run 2</button>
+                        <button class="sys-btn run-btn" data-run="run_3">🎲 Run 3</button>
+                    </div>
+                    <!-- 玩家人數配置 -->
+                    <div class="system-toggle" style="margin-bottom: 10px;">
+                        <span style="font-weight: bold; margin-right: 10px; color: var(--text-secondary); line-height: 2.2;">玩家配置:</span>
+                        <button class="sys-btn dist-btn active" data-dist="unequal">👥 不均等配置 (100/10/2)</button>
+                        <button class="sys-btn dist-btn" data-dist="equal">👥 均等配置 (每BET 100人)</button>
+                    </div>
                 </div>
                 <div class="system-toggle">
                     <button class="sys-btn active" data-system="B">系統 B (IGS區間BET池)</button>
