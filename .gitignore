@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.DS_Store
+.vscode/
+
+# Unrelated projects
+CashBingo_DistSim/
+CashBingo_Server/
+CashBingo_V2/
+PAS003_WaterRecord_Compare/
