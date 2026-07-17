@@ -26,71 +26,76 @@ def batch_run():
     total = len(buffer_ranges) * len(pre_funds) * len(distributions)
     count = 1
 
-    for dist_name, player_groups in distributions:
-        for buf_min, buf_max in buffer_ranges:
-            for pre_fund in pre_funds:
-                pre_fund_pct = int(pre_fund * 100)
-                dir_name = f"{dist_name}_buffer_{buf_min}_{buf_max}_pre_{pre_fund_pct}"
-                
-                os.makedirs(os.path.join(reports_dir, dir_name), exist_ok=True)
-                
-                output_b = os.path.join(reports_dir, dir_name, "simulation_b_log.json")
-                output_c = os.path.join(reports_dir, dir_name, "simulation_c_log.json")
-                output_d = os.path.join(reports_dir, dir_name, "simulation_d_log.json")
-                output_e = os.path.join(reports_dir, dir_name, "simulation_e_log.json")
-                output_f = os.path.join(reports_dir, dir_name, "simulation_f_log.json")
-                output_g = os.path.join(reports_dir, dir_name, "simulation_g_log.json")
-                output_h = os.path.join(reports_dir, dir_name, "simulation_h_log.json")
-                
-                print(f"\n[{count}/{total}] 執行設定: {dist_name} 分佈, Buffer {buf_min}~{buf_max}, Pre-fund {pre_fund_pct}%")
-                
-                run_sim_b(
-                    buffer_min=buf_min, 
-                    buffer_max=buf_max, 
-                    pre_fund=pre_fund, 
-                    output_path=output_b,
-                    player_groups=player_groups
-                )
-                run_sim_c(
-                    output_path=output_c,
-                    player_groups=player_groups
-                )
-                run_sim_d(
-                    buffer_min=buf_min, 
-                    buffer_max=buf_max, 
-                    pre_fund=pre_fund, 
-                    output_path=output_d,
-                    player_groups=player_groups
-                )
-                run_sim_e(
-                    buffer_min=buf_min, 
-                    buffer_max=buf_max, 
-                    pre_fund=pre_fund, 
-                    output_path=output_e,
-                    player_groups=player_groups
-                )
-                run_sim_f(
-                    buffer_min=buf_min, 
-                    buffer_max=buf_max, 
-                    pre_fund=pre_fund, 
-                    output_path=output_f,
-                    player_groups=player_groups
-                )
-                run_sim_g(
-                    buffer_min=buf_min, 
-                    buffer_max=buf_max, 
-                    pre_fund=pre_fund, 
-                    output_path=output_g,
-                    player_groups=player_groups
-                )
-                run_sim_h(
-                    buffer_min=buf_min, 
-                    buffer_max=buf_max, 
-                    pre_fund=pre_fund, 
-                    output_path=output_h,
-                    player_groups=player_groups
-                )
-                count += 1
+    for run_idx in range(1, 4):
+        run_dir = os.path.join(reports_dir, f"run_{run_idx}")
+        print(f"\n========== 開始執行 Run {run_idx} ==========")
+        
+        for dist_name, player_groups in distributions:
+            for buf_min, buf_max in buffer_ranges:
+                for pre_fund in pre_funds:
+                    pre_fund_pct = int(pre_fund * 100)
+                    dir_name = f"{dist_name}_buffer_{buf_min}_{buf_max}_pre_{pre_fund_pct}"
+                    
+                    target_dir = os.path.join(run_dir, dir_name)
+                    os.makedirs(target_dir, exist_ok=True)
+                    
+                    output_b = os.path.join(target_dir, "simulation_b_log.json")
+                    output_c = os.path.join(target_dir, "simulation_c_log.json")
+                    output_d = os.path.join(target_dir, "simulation_d_log.json")
+                    output_e = os.path.join(target_dir, "simulation_e_log.json")
+                    output_f = os.path.join(target_dir, "simulation_f_log.json")
+                    output_g = os.path.join(target_dir, "simulation_g_log.json")
+                    output_h = os.path.join(target_dir, "simulation_h_log.json")
+                    
+                    print(f"\n[Run {run_idx}] [{count}/{total*3}] 執行設定: {dist_name} 分佈, Buffer {buf_min}~{buf_max}, Pre-fund {pre_fund_pct}%")
+                    
+                    run_sim_b(
+                        buffer_min=buf_min, 
+                        buffer_max=buf_max, 
+                        pre_fund=pre_fund, 
+                        output_path=output_b,
+                        player_groups=player_groups
+                    )
+                    run_sim_c(
+                        output_path=output_c,
+                        player_groups=player_groups
+                    )
+                    run_sim_d(
+                        buffer_min=buf_min, 
+                        buffer_max=buf_max, 
+                        pre_fund=pre_fund, 
+                        output_path=output_d,
+                        player_groups=player_groups
+                    )
+                    run_sim_e(
+                        buffer_min=buf_min, 
+                        buffer_max=buf_max, 
+                        pre_fund=pre_fund, 
+                        output_path=output_e,
+                        player_groups=player_groups
+                    )
+                    run_sim_f(
+                        buffer_min=buf_min, 
+                        buffer_max=buf_max, 
+                        pre_fund=pre_fund, 
+                        output_path=output_f,
+                        player_groups=player_groups
+                    )
+                    run_sim_g(
+                        buffer_min=buf_min, 
+                        buffer_max=buf_max, 
+                        pre_fund=pre_fund, 
+                        output_path=output_g,
+                        player_groups=player_groups
+                    )
+                    run_sim_h(
+                        buffer_min=buf_min, 
+                        buffer_max=buf_max, 
+                        pre_fund=pre_fund, 
+                        output_path=output_h,
+                        player_groups=player_groups
+                    )
+                    count += 1
             
     print("\n所有批次模擬完成！報表已存放於 reports/ 資料夾中。")
 
