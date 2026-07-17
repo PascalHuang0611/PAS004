@@ -47,9 +47,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 改為按需載入 (Lazy Load) 以避免一次抓取 294 份巨大報表導致瀏覽器當機
     async function tryAutoLoad() {
-        fileNameDisplay.textContent = '系統就緒，點擊下方分頁載入對應報表';
+        fileNameDisplay.textContent = '嘗試自動連線並讀取報表...';
         allReports = {};
-        setupUIAfterLoad();
+        
+        try {
+            // 先測試是否能成功 fetch 第一份檔案 (確認伺服器環境/CORS沒問題)
+            const testPath = `reports/unequal_${knownConfigs[0]}/simulation_b_log.json`;
+            const res = await fetch(testPath, { method: 'HEAD' });
+            if (!res.ok) throw new Error("HTTP error");
+            
+            // 測試成功，進入自動按需加載模式
+            fileNameDisplay.textContent = '系統就緒，點擊下方分頁載入對應報表';
+            setupUIAfterLoad();
+        } catch (e) {
+            // 測試失敗 (可能是在本地直接打開 file:/// 的環境)
+            // 不啟動自動 UI，保留手動上傳按鈕
+            fileNameDisplay.textContent = '本地環境無法自動讀取，請手動選擇 Reports 資料夾上傳';
+        }
     }
 
     // 建立頁籤與切換邏輯
