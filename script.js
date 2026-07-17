@@ -45,46 +45,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // 嘗試自動載入所有報表
+    // 改為按需載入 (Lazy Load) 以避免一次抓取 294 份巨大報表導致瀏覽器當機
     async function tryAutoLoad() {
-        fileNameDisplay.textContent = '嘗試自動讀取報告...';
+        fileNameDisplay.textContent = '系統就緒，點擊下方分頁載入對應報表';
         allReports = {};
-        
-        let successCount = 0;
-        let completeCount = 0;
-        const totalFiles = knownConfigs.length * 2 * 5;
-        const fetchPromises = [];
-
-        knownConfigs.forEach(config => {
-            ['unequal', 'equal'].forEach(dist => {
-                ['b', 'c', 'd', 'e', 'f', 'g', 'h'].forEach(sys => {
-                    const path = `reports/${dist}_${config}/simulation_${sys}_log.json`;
-                    const p = fetch(path)
-                        .then(res => {
-                            if (!res.ok) throw new Error("HTTP error " + res.status);
-                            return res.json();
-                        })
-                        .then(data => {
-                            allReports[path] = data;
-                            successCount++;
-                        })
-                        .catch(() => { /* 忽略失敗 */ })
-                        .finally(() => {
-                            completeCount++;
-                            fileNameDisplay.textContent = `嘗試自動讀取報告... (${completeCount}/${totalFiles})`;
-                        });
-                    fetchPromises.push(p);
-                });
-            });
-        });
-
-        await Promise.all(fetchPromises);
-
-        if (successCount > 0) {
-            setupUIAfterLoad();
-        } else {
-            fileNameDisplay.textContent = '自動讀取失敗 (請使用手動上傳或設定 Server)';
-        }
+        setupUIAfterLoad();
     }
 
     // 建立頁籤與切換邏輯
@@ -102,10 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
         currentConfig = currentConfig || knownConfigs[0];
 
         knownConfigs.forEach(config => {
-            // 檢查該設定是否至少有一份資料
-            const hasData = allReports[`reports/${currentDist}_${config}/simulation_b_log.json`] || allReports[`reports/${currentDist}_${config}/simulation_c_log.json`];
-            if (!hasData) return;
-
+            // 由於改為按需載入，我們預設所有已知配置都存在報表
             const btn = document.createElement('button');
             btn.className = `tab-btn ${config === currentConfig ? 'active' : ''}`;
             
@@ -133,23 +95,44 @@ document.addEventListener("DOMContentLoaded", () => {
         loadCurrentSelection();
     }
 
-    // 根據目前的 system, dist 與 config 載入資料
-    function loadCurrentSelection() {
+    // 根據目前的 system, dist 與 config 載入資料 (改為按需 fetch)
+    async function loadCurrentSelection() {
         if (!currentConfig) return;
         const path = `reports/${currentDist}_${currentConfig}/simulation_${currentSystem.toLowerCase()}_log.json`;
         
+        fileNameDisplay.textContent = `正在讀取報表: ${path} ...`;
+        
+        // 如果已經在暫存中就直接用
         if (allReports[path]) {
-            globalData = allReports[path];
-            // 重設排序狀態
-            currentSortCol = null;
-            currentSortAsc = false;
-            document.querySelectorAll("th.sortable").forEach(h => {
-                h.classList.remove('asc', 'desc');
-            });
-            processData(globalData);
-        } else {
-            alert(`找不到 ${currentSystem} 系統在 ${currentConfig} 的數據。`);
+            renderData(allReports[path]);
+            fileNameDisplay.textContent = `目前顯示: ${path}`;
+            return;
         }
+
+        try {
+            const res = await fetch(path);
+            if (!res.ok) throw new Error("HTTP error " + res.status);
+            const data = await res.json();
+            
+            // 快取起來
+            allReports[path] = data;
+            renderData(data);
+            fileNameDisplay.textContent = `目前顯示: ${path}`;
+        } catch (error) {
+            alert(`找不到 ${currentSystem} 系統在 ${currentConfig} 的數據，或載入失敗。`);
+            fileNameDisplay.textContent = `載入失敗: ${path}`;
+        }
+    }
+
+    function renderData(data) {
+        globalData = data;
+        // 重設排序狀態
+        currentSortCol = null;
+        currentSortAsc = false;
+        document.querySelectorAll("th.sortable").forEach(h => {
+            h.classList.remove('asc', 'desc');
+        });
+        processData(globalData);
     }
 
     // 系統切換器
