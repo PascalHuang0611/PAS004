@@ -268,6 +268,11 @@ function processData(data) {
     let totalBetAll = 0;
     let totalReturnAll = 0;
     
+    // 用來記錄全域改判佔比
+    window.globalTotalChanged = 0;
+    window.globalTotalPlays = 0;
+    window.systemHasChangedOutcomes = false;
+    
     // 用於圖表：依據 betAmount 分組記錄每一局的勝負
     const betGroups = {};
     
@@ -298,7 +303,14 @@ function processData(data) {
                 currentWinStreak = 0;
                 if (currentLossStreak > maxLossStreak) maxLossStreak = currentLossStreak;
             }
+            
+            if (round.wasChanged) {
+                window.globalTotalChanged++;
+                window.systemHasChangedOutcomes = true;
+            }
         });
+        
+        window.globalTotalPlays += player.totalPlays;
         
         player.maxWin = maxWinStreak;
         player.maxLoss = maxLossStreak;
@@ -334,6 +346,18 @@ function processData(data) {
     document.getElementById("total-players").textContent = data.length;
     const overallRtp = (totalReturnAll / totalBetAll) * 100;
     document.getElementById("overall-rtp").textContent = overallRtp.toFixed(2) + "%";
+    
+    // 渲染全域改判佔比
+    const changedRateEl = document.getElementById('global-changed-rate');
+    if (changedRateEl) {
+        if (window.systemHasChangedOutcomes && window.globalTotalPlays > 0) {
+            const rate = (window.globalTotalChanged / window.globalTotalPlays * 100).toFixed(2);
+            changedRateEl.textContent = `(全體平均被改判佔比: ${rate}%)`;
+            changedRateEl.style.display = 'inline';
+        } else {
+            changedRateEl.style.display = 'none';
+        }
+    }
     
     // 渲染表格與設定排序
     renderTable();
@@ -865,6 +889,24 @@ function showPlayerDetails(playerId) {
     document.getElementById('modal-player-name').textContent = `玩家歷程: ${player.playerId}`;
     document.getElementById('modal-max-win').textContent = `${player.maxWin} 局`;
     document.getElementById('modal-max-loss').textContent = `${player.maxLoss} 局`;
+
+    // 處理改判佔比的顯示
+    let changedCount = 0;
+    player.history.forEach(round => {
+        if (round.wasChanged) changedCount++;
+    });
+    
+    const changedBox = document.getElementById('modal-changed-box');
+    const changedRateEl = document.getElementById('modal-changed-rate');
+    if (changedBox && changedRateEl) {
+        if (window.systemHasChangedOutcomes) {
+            const rate = player.totalPlays > 0 ? (changedCount / player.totalPlays * 100).toFixed(2) : 0;
+            changedRateEl.textContent = `${rate}%`;
+            changedBox.style.display = 'flex';
+        } else {
+            changedBox.style.display = 'none';
+        }
+    }
 
     // 清空並產生歷史紀錄表格
     const tbody = document.querySelector("#history-table tbody");
