@@ -877,13 +877,13 @@ function setupSorting() {
             globalData.sort((a, b) => {
                 let valA = a[col];
                 let valB = b[col];
-                
-                // Player ID 特殊處理（轉成數字排序）
+
+                // Player ID 特殊處理（自然排序，讓 G1_2 排在 G1_10 前面）
                 if (col === 'playerId') {
-                    valA = parseInt(a.playerId.replace('Player_', ''));
-                    valB = parseInt(b.playerId.replace('Player_', ''));
+                    const cmp = a.playerId.localeCompare(b.playerId, undefined, { numeric: true });
+                    return currentSortAsc ? cmp : -cmp;
                 }
-                
+
                 if (valA < valB) return currentSortAsc ? -1 : 1;
                 if (valA > valB) return currentSortAsc ? 1 : -1;
                 return 0;

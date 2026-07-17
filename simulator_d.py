@@ -111,7 +111,7 @@ def run_simulation(buffer_min=None, buffer_max=None, pre_fund=None, output_path=
         json.dump(log_data, f, ensure_ascii=False, indent=2)
 
     print(f"[{json_path}] 模擬完成！")
-    print(f"系統G設定: Base Buffer {base_buf_min}~{base_buf_max}, Pre-fund: {pre_ratio*100}%")
+    print(f"系統D設定: Base Buffer {base_buf_min}~{base_buf_max}, Pre-fund: {pre_ratio*100}%")
 
 if __name__ == "__main__":
     run_simulation()
