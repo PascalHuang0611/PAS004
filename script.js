@@ -565,6 +565,7 @@ function showPlayerDetails(playerId) {
         const flipText = round.flip === "Heads" ? "正面" : (round.flip === "Tails" ? "反面" : "-");
 
         tr.innerHTML = `
+            <td>${round.globalId || '-'}</td>
             <td>${round.round}</td>
             <td>${flipText}</td>
             <td class="${changeClass}">${changeText}</td>

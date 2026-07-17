@@ -41,7 +41,7 @@ def run_simulation(buffer_min=None, buffer_max=None, pre_fund=None, output_path=
     random.shuffle(actions)
     
     # 開始逐局處理
-    for player_id in actions:
+    for global_idx, player_id in enumerate(actions, start=1):
         player = players_data[player_id]
         bet = player["betAmount"]
         
@@ -88,6 +88,7 @@ def run_simulation(buffer_min=None, buffer_max=None, pre_fund=None, output_path=
         # 記錄歷史
         round_num = len(player["history"]) + 1
         player["history"].append({
+            "globalId": global_idx,
             "round": round_num,
             "flip": "Heads" if is_heads else "Tails",
             "result": result,
