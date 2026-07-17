@@ -33,9 +33,11 @@
                 <div class="system-toggle">
                     <button class="sys-btn active" data-system="B">系統 B (IGS區間BET池)</button>
                     <button class="sys-btn" data-system="C">系統 C (純隨機)</button>
+                    <button class="sys-btn" data-system="D">系統 D (UJ個人分BET)</button>
                     <button class="sys-btn" data-system="E">系統 E (IGS分BET池)</button>
                     <button class="sys-btn" data-system="F">系統 F (UJ全域分BET)</button>
-                    <button class="sys-btn" data-system="G">系統 G (UJ個人分BET)</button>
+                    <button class="sys-btn" data-system="G">系統 G (IGS區間BET單位版)</button>
+                    <button class="sys-btn" data-system="H">系統 H (UJ混合分BET)</button>
                 </div>
                 <div class="tabs-wrapper">
                     <div class="tabs-row">
@@ -66,6 +68,42 @@
         </div>
 
         <div class="chart-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h2 style="margin: 0;">最終玩家 RTP 分布圖</h2>
+                <div>
+                    <label for="rtp-bin-size" style="font-weight: bold; margin-right: 5px;">顆粒度 (Bin Size): </label>
+                    <select id="rtp-bin-size" style="padding: 5px; border-radius: 4px;">
+                        <option value="0.5">0.5%</option>
+                        <option value="1">1%</option>
+                        <option value="2" selected>2%</option>
+                        <option value="5">5%</option>
+                        <option value="10">10%</option>
+                    </select>
+                </div>
+            </div>
+            <div style="position: relative; height: 350px; width: 100%;">
+                <canvas id="rtpDistributionChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-container" style="margin-top: 2rem;">
+            <div style="display: flex; justify-content: space-between; gap: 20px;">
+                <div style="flex: 1;">
+                    <h2 style="margin: 0 0 10px 0;">最終最大連贏分布圖</h2>
+                    <div style="position: relative; height: 350px; width: 100%;">
+                        <canvas id="maxWinDistributionChart"></canvas>
+                    </div>
+                </div>
+                <div style="flex: 1;">
+                    <h2 style="margin: 0 0 10px 0;">最終最大連輸分布圖</h2>
+                    <div style="position: relative; height: 350px; width: 100%;">
+                        <canvas id="maxLossDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-container" style="margin-top: 2rem;">
             <h2>各 BET 群組：每局平均勝率變化</h2>
             <div style="position: relative; height: 400px; width: 100%;">
                 <canvas id="winRateChart"></canvas>
@@ -134,6 +172,7 @@
                             <th>水位餘額</th>
                             <th>強制改盤</th>
                             <th>系統判斷</th>
+                            <th>出獎來源</th>
                         </tr>
                     </thead>
                     <tbody>

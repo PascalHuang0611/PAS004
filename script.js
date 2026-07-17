@@ -1,10 +1,14 @@
 let currentChart = null;
 let currentRtpRoundChart = null;
 let currentSummaryBarChart = null;
+let currentRtpDistChart = null;
+let currentMaxWinDistChart = null;
+let currentMaxLossDistChart = null;
 let globalData = [];
 let allReports = {};
 let currentSortCol = null;
 let currentSortAsc = false; // 預設降冪排序
+let currentSystem = 'B';
 
 document.addEventListener("DOMContentLoaded", () => {
     const fileInput = document.getElementById('file-upload');
@@ -28,7 +32,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const controlsSection = document.getElementById('controls-section');
     const sysBtns = document.querySelectorAll('.sys-btn');
     
-    let currentSystem = 'B';
     let currentConfig = null; // e.g. "buffer_1_3_pre_40"
     let currentDist = 'unequal'; // "unequal" or "equal"
 
@@ -54,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         knownConfigs.forEach(config => {
             ['unequal', 'equal'].forEach(dist => {
-                ['b', 'c', 'e', 'f', 'g'].forEach(sys => {
+                ['b', 'c', 'd', 'e', 'f', 'g', 'h'].forEach(sys => {
                     const path = `reports/${dist}_${config}/simulation_${sys}_log.json`;
                     const p = fetch(path)
                         .then(res => {
@@ -201,9 +204,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         // 我們強制將路徑正規化為我們認識的格式，以配合頁籤邏輯
                         let system = 'b';
                         if (pathName.includes('_c_log')) system = 'c';
+                        if (pathName.includes('_d_log')) system = 'd';
                         if (pathName.includes('_e_log')) system = 'e';
                         if (pathName.includes('_f_log')) system = 'f';
                         if (pathName.includes('_g_log')) system = 'g';
+                        if (pathName.includes('_h_log')) system = 'h';
                         let configMatch = pathName.match(/buffer_\d+_\d+_pre_\d+/);
                         let distMatch = pathName.match(/(unequal|equal)_buffer/);
                         if (configMatch && distMatch) {
@@ -228,6 +233,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 網頁載入時立刻嘗試自動讀取
     tryAutoLoad();
+
+    // 監聽 RTP 分佈圖顆粒度變更
+    const binSizeSelect = document.getElementById('rtp-bin-size');
+    if (binSizeSelect) {
+        binSizeSelect.addEventListener('change', () => {
+            if (globalData && globalData.length > 0) {
+                drawRtpDistributionChart(globalData);
+            }
+        });
+    }
 });
 
 function processData(data) {
@@ -493,6 +508,279 @@ function processData(data) {
             }
         }
     });
+
+    // 4. 繪製最終玩家 RTP 分布圖
+    drawRtpDistributionChart(data);
+    
+    // 5. 繪製最終連贏連輸分布圖
+    drawStreakDistributionCharts(data);
+
+    // 6. 渲染表格
+    renderTable();
+}
+
+function drawStreakDistributionCharts(data) {
+    if (currentMaxWinDistChart) {
+        currentMaxWinDistChart.destroy();
+        currentMaxWinDistChart = null;
+    }
+    if (currentMaxLossDistChart) {
+        currentMaxLossDistChart.destroy();
+        currentMaxLossDistChart = null;
+    }
+
+    const validData = data.filter(p => !isNaN(p.maxWin) && !isNaN(p.maxLoss));
+    if (validData.length === 0) return;
+
+    // 找出整體最大連贏與最大連輸數值，決定圖表 X 軸長度
+    const globalMaxWin = Math.max(...validData.map(p => p.maxWin), 0);
+    const globalMaxLoss = Math.max(...validData.map(p => p.maxLoss), 0);
+
+    const winLabels = Array.from({length: globalMaxWin + 1}, (_, i) => `${i}局`);
+    const lossLabels = Array.from({length: globalMaxLoss + 1}, (_, i) => `${i}局`);
+
+    const betGroups = {};
+    validData.forEach(p => {
+        if (!betGroups[p.betAmount]) {
+            betGroups[p.betAmount] = {
+                players: 0,
+                winBins: Array(globalMaxWin + 1).fill(0),
+                lossBins: Array(globalMaxLoss + 1).fill(0)
+            };
+        }
+        betGroups[p.betAmount].players++;
+        betGroups[p.betAmount].winBins[p.maxWin]++;
+        betGroups[p.betAmount].lossBins[p.maxLoss]++;
+    });
+
+    const totalPlayers = validData.length;
+    const winDatasets = [];
+    const lossDatasets = [];
+    const colors = [
+        'rgba(54, 162, 235, 0.7)',
+        'rgba(255, 99, 132, 0.7)',
+        'rgba(75, 192, 192, 0.7)',
+        'rgba(255, 206, 86, 0.7)',
+        'rgba(153, 102, 255, 0.7)',
+        'rgba(255, 159, 64, 0.7)'
+    ];
+    let colorIdx = 0;
+
+    for (const betStr in betGroups) {
+        const bet = parseFloat(betStr);
+        const group = betGroups[bet];
+        
+        const winPercentages = group.winBins.map(count => (count / totalPlayers) * 100);
+        const lossPercentages = group.lossBins.map(count => (count / totalPlayers) * 100);
+        
+        const color = colors[colorIdx % colors.length];
+        
+        winDatasets.push({
+            label: `Bet $${bet} (${group.players}人)`,
+            data: winPercentages,
+            backgroundColor: color,
+            borderColor: color.replace('0.7', '1'),
+            borderWidth: 1,
+            stack: 'Stack 0',
+            _rawCounts: group.winBins
+        });
+
+        lossDatasets.push({
+            label: `Bet $${bet} (${group.players}人)`,
+            data: lossPercentages,
+            backgroundColor: color,
+            borderColor: color.replace('0.7', '1'),
+            borderWidth: 1,
+            stack: 'Stack 0',
+            _rawCounts: group.lossBins
+        });
+        
+        colorIdx++;
+    }
+
+    const winCtx = document.getElementById('maxWinDistributionChart');
+    if (winCtx) {
+        currentMaxWinDistChart = new Chart(winCtx.getContext('2d'), {
+            type: 'bar',
+            data: { labels: winLabels, datasets: winDatasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#94a3b8' },
+                        title: { display: true, text: '總佔比 (%)', color: '#94a3b8' }
+                    },
+                    x: {
+                        stacked: true,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#94a3b8' },
+                        title: { display: true, text: '最大連贏局數', color: '#94a3b8' }
+                    }
+                },
+                plugins: {
+                    legend: { labels: { color: '#f8fafc' } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const count = context.dataset._rawCounts[context.dataIndex];
+                                return `${context.dataset.label.split(' ')[0]} ${context.dataset.label.split(' ')[1]}: 佔比 ${context.parsed.y.toFixed(2)}% (${count}人)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    const lossCtx = document.getElementById('maxLossDistributionChart');
+    if (lossCtx) {
+        currentMaxLossDistChart = new Chart(lossCtx.getContext('2d'), {
+            type: 'bar',
+            data: { labels: lossLabels, datasets: lossDatasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#94a3b8' },
+                        title: { display: true, text: '總佔比 (%)', color: '#94a3b8' }
+                    },
+                    x: {
+                        stacked: true,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#94a3b8' },
+                        title: { display: true, text: '最大連輸局數', color: '#94a3b8' }
+                    }
+                },
+                plugins: {
+                    legend: { labels: { color: '#f8fafc' } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const count = context.dataset._rawCounts[context.dataIndex];
+                                return `${context.dataset.label.split(' ')[0]} ${context.dataset.label.split(' ')[1]}: 佔比 ${context.parsed.y.toFixed(2)}% (${count}人)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function drawRtpDistributionChart(data) {
+    if (currentRtpDistChart) {
+        currentRtpDistChart.destroy();
+        currentRtpDistChart = null;
+    }
+
+    const binSizeSelect = document.getElementById('rtp-bin-size');
+    const binSize = binSizeSelect ? parseFloat(binSizeSelect.value) : 2;
+
+    const validData = data.filter(p => !isNaN(p.rtp) && isFinite(p.rtp));
+    if (validData.length === 0) return;
+
+    const rtps = validData.map(p => p.rtp);
+    const minRtp = Math.floor(Math.min(...rtps) / binSize) * binSize;
+    const maxRtp = Math.ceil(Math.max(...rtps) / binSize) * binSize;
+
+    const numBins = Math.ceil((maxRtp - minRtp) / binSize) + 1;
+    const binLabels = [];
+    for (let current = minRtp; current <= maxRtp; current += binSize) {
+        binLabels.push(`${current.toFixed(1)}~${(current + binSize).toFixed(1)}%`);
+    }
+
+    const betGroups = {};
+    validData.forEach(p => {
+        if (!betGroups[p.betAmount]) {
+            betGroups[p.betAmount] = { players: 0, bins: Array(numBins).fill(0) };
+        }
+        betGroups[p.betAmount].players++;
+        
+        let index = Math.floor((p.rtp - minRtp) / binSize);
+        if (index >= numBins) index = numBins - 1;
+        if (index < 0) index = 0;
+        betGroups[p.betAmount].bins[index]++;
+    });
+
+    const totalPlayers = validData.length;
+    const datasets = [];
+    const colors = [
+        'rgba(54, 162, 235, 0.7)',
+        'rgba(255, 99, 132, 0.7)',
+        'rgba(75, 192, 192, 0.7)',
+        'rgba(255, 206, 86, 0.7)',
+        'rgba(153, 102, 255, 0.7)',
+        'rgba(255, 159, 64, 0.7)'
+    ];
+    let colorIdx = 0;
+
+    for (const betStr in betGroups) {
+        const bet = parseFloat(betStr);
+        const group = betGroups[bet];
+        const percentages = group.bins.map(count => (count / totalPlayers) * 100);
+        
+        const color = colors[colorIdx % colors.length];
+        
+        datasets.push({
+            label: `Bet $${bet} (${group.players}人)`,
+            data: percentages,
+            backgroundColor: color,
+            borderColor: color.replace('0.7', '1'),
+            borderWidth: 1,
+            stack: 'Stack 0',
+            _rawCounts: group.bins
+        });
+        colorIdx++;
+    }
+
+    const ctx = document.getElementById('rtpDistributionChart');
+    if (!ctx) return;
+
+    currentRtpDistChart = new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: binLabels,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { color: '#94a3b8' },
+                    title: { display: true, text: '總佔比 (%)', color: '#94a3b8' }
+                },
+                x: {
+                    stacked: true,
+                    grid: { color: 'rgba(255,255,255,0.05)' },
+                    ticks: { color: '#94a3b8' },
+                    title: { display: true, text: 'RTP 區間', color: '#94a3b8' }
+                }
+            },
+            plugins: {
+                legend: { labels: { color: '#f8fafc' } },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const count = context.dataset._rawCounts[context.dataIndex];
+                            return `${context.dataset.label.split(' ')[0]} ${context.dataset.label.split(' ')[1]}: 佔比 ${context.parsed.y.toFixed(2)}% (${count}人)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
 }
 
 function renderTable() {
@@ -588,10 +876,19 @@ function showPlayerDetails(playerId) {
             changedTag = `<span style="color: #10b981;">否</span>`;
         }
         
-        // Ensure backwards compatibility with old logs that don't have poolBalance
-        const poolBalanceText = round.poolBalance !== undefined ? `$${round.poolBalance}` : "-";
-        
         // Ensure backwards compatibility with old logs
+        let poolBalanceText = "-";
+        let poolSourceText = "-";
+        
+        if (currentSystem === 'h' || currentSystem === 'H') {
+            poolBalanceText = `(個)${round.personalPoolBalance} | (全)${round.globalPoolBalance}`;
+            if (round.poolType === 'Global') poolSourceText = "🌐 全域池";
+            else if (round.poolType === 'Personal') poolSourceText = "👤 個人池";
+            else poolSourceText = "-";
+        } else {
+            poolBalanceText = round.poolBalance !== undefined ? `$${round.poolBalance}` : "-";
+        }
+        
         const flipText = round.flip === "Heads" ? "正面" : (round.flip === "Tails" ? "反面" : "-");
 
         tr.innerHTML = `
@@ -603,6 +900,7 @@ function showPlayerDetails(playerId) {
             <td>${poolBalanceText}</td>
             <td>${changedTag}</td>
             <td>${round.result === "Win" ? "贏" : "輸"}</td>
+            <td>${poolSourceText}</td>
         `;
         tbody.appendChild(tr);
     });
