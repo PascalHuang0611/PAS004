@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     const uploadSection = document.getElementById('upload-section');
     const controlsSection = document.getElementById('controls-section');
-    const sysBtns = document.querySelectorAll('.sys-btn');
+    const sysBtns = document.querySelectorAll('.sys-btn[data-system]');
     
     let currentConfig = null; // e.g. "buffer_1_3_pre_40"
     let currentDist = 'unequal'; // "unequal" or "equal"
