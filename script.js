@@ -1,4 +1,6 @@
 let currentChart = null;
+let currentRtpRoundChart = null;
+let currentSummaryBarChart = null;
 let globalData = [];
 let allReports = {};
 let currentSortCol = null;
@@ -229,25 +231,30 @@ function processData(data) {
         player.maxWin = maxWinStreak;
         player.maxLoss = maxLossStreak;
 
-        // 統計各 BET 群組的勝率
+        // 統計各 BET 群組的勝率與 RTP
         if (!betGroups[player.betAmount]) {
             betGroups[player.betAmount] = {
                 players: 0,
+                totalBet: 0,
+                totalReturn: 0,
                 rounds: []
             };
         }
         
         betGroups[player.betAmount].players++;
+        betGroups[player.betAmount].totalBet += totalBet;
+        betGroups[player.betAmount].totalReturn += totalReturn;
         
         player.history.forEach(roundData => {
             const rIdx = roundData.round - 1; // Array is 0-indexed
             if (!betGroups[player.betAmount].rounds[rIdx]) {
-                betGroups[player.betAmount].rounds[rIdx] = { wins: 0, total: 0 };
+                betGroups[player.betAmount].rounds[rIdx] = { wins: 0, total: 0, totalChange: 0 };
             }
             if (roundData.result === "Win") {
                 betGroups[player.betAmount].rounds[rIdx].wins++;
             }
             betGroups[player.betAmount].rounds[rIdx].total++;
+            betGroups[player.betAmount].rounds[rIdx].totalChange += roundData.change;
         });
     });
     
@@ -269,90 +276,182 @@ function processData(data) {
     }
     
     const labels = Array.from({length: maxRounds}, (_, i) => `局數 ${i + 1}`);
-    const datasets = [];
     
-    // 美觀的預設配色
+    // chart variables
+    const winRateDatasets = [];
+    const rtpRoundDatasets = [];
+    
+    // summary variables
+    const summaryLabels = [];
+    const summaryWinRates = [];
+    const summaryRtps = [];
+    const summaryBgColors1 = [];
+    const summaryBorderColors1 = [];
+    const summaryBgColors2 = [];
+    const summaryBorderColors2 = [];
+    
+    // overall variables for line charts
+    const overallRounds = [];
+    let overallTotalWins = 0;
+    let overallTotalPlays = 0;
+
     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
     let colorIdx = 0;
-    
-    for (const bet in betGroups) {
+
+    for (const betStr in betGroups) {
+        const bet = parseFloat(betStr);
         const group = betGroups[bet];
-        // 計算該群組每一局的平均勝率
-        const dataPoints = group.rounds.map(r => r ? (r.wins / r.total) * 100 : 0);
         
-        datasets.push({
+        let groupTotalWins = 0;
+        let groupTotalPlays = 0;
+        
+        const winRateDataPoints = [];
+        const rtpRoundDataPoints = [];
+        
+        group.rounds.forEach((r, idx) => {
+            if (!overallRounds[idx]) overallRounds[idx] = { wins: 0, total: 0, totalChange: 0, totalBet: 0 };
+            if (r) {
+                overallRounds[idx].wins += r.wins;
+                overallRounds[idx].total += r.total;
+                overallRounds[idx].totalChange += r.totalChange;
+                overallRounds[idx].totalBet += (r.total * bet);
+                
+                groupTotalWins += r.wins;
+                groupTotalPlays += r.total;
+                
+                winRateDataPoints.push(r.total > 0 ? (r.wins / r.total) * 100 : 0);
+                
+                const roundTotalBet = r.total * bet;
+                const roundTotalReturn = roundTotalBet + r.totalChange;
+                rtpRoundDataPoints.push(roundTotalBet > 0 ? (roundTotalReturn / roundTotalBet) * 100 : 0);
+            } else {
+                winRateDataPoints.push(0);
+                rtpRoundDataPoints.push(0);
+            }
+        });
+        
+        overallTotalWins += groupTotalWins;
+        overallTotalPlays += groupTotalPlays;
+        
+        const color = colors[colorIdx % colors.length];
+        
+        winRateDatasets.push({
             label: `Bet $${bet} (${group.players}人)`,
-            data: dataPoints,
-            borderColor: colors[colorIdx % colors.length],
-            backgroundColor: colors[colorIdx % colors.length] + '33', // 帶透明度
+            data: winRateDataPoints,
+            borderColor: color,
+            backgroundColor: color + '33',
             borderWidth: 2,
             pointRadius: 2,
-            pointHoverRadius: 6,
             fill: false,
-            tension: 0.3 // 讓線條稍微平滑
+            tension: 0.3
         });
+        
+        rtpRoundDatasets.push({
+            label: `Bet $${bet} (${group.players}人)`,
+            data: rtpRoundDataPoints,
+            borderColor: color,
+            backgroundColor: color + '33',
+            borderWidth: 2,
+            pointRadius: 2,
+            fill: false,
+            tension: 0.3
+        });
+        
+        const groupRtp = (group.totalReturn / group.totalBet) * 100;
+        const groupWinRate = groupTotalPlays > 0 ? (groupTotalWins / groupTotalPlays) * 100 : 0;
+        
+        summaryLabels.push(`Bet $${bet}`);
+        summaryWinRates.push(groupWinRate);
+        summaryRtps.push(groupRtp);
+        
+        summaryBgColors1.push(color + '88');
+        summaryBorderColors1.push(color);
+        summaryBgColors2.push(color + 'CC');
+        summaryBorderColors2.push(color);
+        
         colorIdx++;
     }
     
-    // 繪製 Chart 前先銷毀舊的圖表（如果有的話）
-    if (currentChart) {
-        currentChart.destroy();
-    }
+    // Overall Summary
+    summaryLabels.push('所有 BET 總計');
+    const grandWinRate = overallTotalPlays > 0 ? (overallTotalWins / overallTotalPlays) * 100 : 0;
+    summaryWinRates.push(grandWinRate);
+    summaryRtps.push(overallRtp); // from outer scope
+    
+    summaryBgColors1.push('rgba(255, 255, 255, 0.4)');
+    summaryBorderColors1.push('#ffffff');
+    summaryBgColors2.push('rgba(255, 255, 255, 0.8)');
+    summaryBorderColors2.push('#ffffff');
+    
+    if (currentChart) currentChart.destroy();
+    if (currentRtpRoundChart) currentRtpRoundChart.destroy();
+    if (currentSummaryBarChart) currentSummaryBarChart.destroy();
 
-    const ctx = document.getElementById('winRateChart').getContext('2d');
-    currentChart = new Chart(ctx, {
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%'; } } },
+            legend: { labels: { color: '#f8fafc', font: { family: 'Inter', size: 13 } } }
+        },
+        scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', callback: function(value) { return value + '%'; } } }
+        }
+    };
+
+    // 1. 繪製勝率折線圖
+    const ctxWin = document.getElementById('winRateChart').getContext('2d');
+    currentChart = new Chart(ctxWin, {
         type: 'line',
+        data: { labels: labels, datasets: winRateDatasets },
+        options: chartOptions
+    });
+
+    // 2. 繪製每局 RTP 折線圖
+    const ctxRtpRound = document.getElementById('rtpRoundChart').getContext('2d');
+    currentRtpRoundChart = new Chart(ctxRtpRound, {
+        type: 'line',
+        data: { labels: labels, datasets: rtpRoundDatasets },
+        options: chartOptions
+    });
+
+    // 3. 繪製總體平均勝率 與 平均 RTP (長條圖)
+    const ctxSummary = document.getElementById('summaryBarChart').getContext('2d');
+    currentSummaryBarChart = new Chart(ctxSummary, {
+        type: 'bar',
         data: {
-            labels: labels,
-            datasets: datasets
+            labels: summaryLabels,
+            datasets: [
+                {
+                    label: '平均勝率 (%)',
+                    data: summaryWinRates,
+                    backgroundColor: summaryBgColors1,
+                    borderColor: summaryBorderColors1,
+                    borderWidth: 2,
+                    borderRadius: 4
+                },
+                {
+                    label: '平均 RTP (%)',
+                    data: summaryRtps,
+                    backgroundColor: summaryBgColors2,
+                    borderColor: summaryBorderColors2,
+                    borderWidth: 2,
+                    borderRadius: 4
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
             plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
-                        }
-                    }
-                },
-                legend: {
-                    labels: {
-                        color: '#f8fafc',
-                        font: {
-                            family: 'Inter',
-                            size: 13
-                        }
-                    }
-                }
+                legend: { labels: { color: '#f8fafc' } },
+                tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.raw.toFixed(2) + '%'; } } }
             },
             scales: {
-                x: {
-                    grid: {
-                        color: 'rgba(255,255,255,0.05)'
-                    },
-                    ticks: {
-                        color: '#94a3b8'
-                    }
-                },
-                y: {
-                    grid: {
-                        color: 'rgba(255,255,255,0.05)'
-                    },
-                    ticks: {
-                        color: '#94a3b8',
-                        callback: function(value) {
-                            return value + '%';
-                        }
-                    },
-                    min: 0,
-                    max: 100
-                }
+                x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', callback: function(value) { return value + '%'; } } }
             }
         }
     });
