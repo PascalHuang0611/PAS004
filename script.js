@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 14種已知參數設定
     const bufferRanges = [[1, 3], [1, 10], [1, 20], [1, 40], [10, 20], [10, 30], [20, 40]];
-    const preFunds = [40, 70];
+    const preFunds = [35, 65, 95];
     const knownConfigs = [];
     bufferRanges.forEach(b => {
         preFunds.forEach(p => {
@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const fetchPromises = [];
 
         knownConfigs.forEach(config => {
-            ['b', 'c'].forEach(sys => {
+            ['b', 'c', 'e', 'f'].forEach(sys => {
                 const path = `reports/${config}/simulation_${sys}_log.json`;
                 const p = fetch(path)
                     .then(res => {
@@ -80,10 +80,12 @@ document.addEventListener("DOMContentLoaded", () => {
         uploadSection.style.display = 'none';
         controlsSection.style.display = 'flex';
         
-        const tabs40 = document.getElementById('tabs-container-40');
-        const tabs70 = document.getElementById('tabs-container-70');
-        tabs40.innerHTML = '';
-        tabs70.innerHTML = '';
+        const tabs35 = document.getElementById('tabs-container-35');
+        const tabs65 = document.getElementById('tabs-container-65');
+        const tabs95 = document.getElementById('tabs-container-95');
+        tabs35.innerHTML = '';
+        tabs65.innerHTML = '';
+        tabs95.innerHTML = '';
         
         currentConfig = currentConfig || knownConfigs[0];
 
@@ -107,10 +109,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 loadCurrentSelection();
             });
             
-            if (config.includes('pre_40')) {
-                tabs40.appendChild(btn);
+            if (config.includes('pre_35')) {
+                tabs35.appendChild(btn);
+            } else if (config.includes('pre_65')) {
+                tabs65.appendChild(btn);
             } else {
-                tabs70.appendChild(btn);
+                tabs95.appendChild(btn);
             }
         });
 

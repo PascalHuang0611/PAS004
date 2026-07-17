@@ -8,7 +8,7 @@ def batch_run():
     buffer_ranges = [
         (1, 3), (1, 10), (1, 20), (1, 40), (10, 20), (10, 30), (20, 40)
     ]
-    pre_funds = [0.4, 0.7]
+    pre_funds = [0.35, 0.65, 0.95]
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
     reports_dir = os.path.join(base_dir, "reports")
