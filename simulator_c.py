@@ -2,9 +2,11 @@ import json
 import random
 import os
 
-from simulator_config import WIN_PROFIT_MULTIPLIER, PLAYER_GROUPS
+from simulator_config import WIN_PROFIT_MULTIPLIER, PLAYER_GROUPS_UNEQUAL
 
-def run_simulation(output_path=None):
+def run_simulation(output_path=None, player_groups=None):
+    if player_groups is None:
+        player_groups = PLAYER_GROUPS_UNEQUAL
     players_data = {}
     actions = []
     total_rounds_simulated = 0
@@ -12,7 +14,7 @@ def run_simulation(output_path=None):
     print("開始進行模擬...")
 
     group_idx = 1
-    for group in PLAYER_GROUPS:
+    for group in player_groups:
         bet = group["betAmount"]
         for i in range(group["count"]):
             # 跟其他系統保持一致的 ID 格式

@@ -1,10 +1,12 @@
 import json
 import random
 import os
-from simulator_config import PLAYER_GROUPS, WIN_PROFIT_MULTIPLIER
+from simulator_config import POOL_BUFFER_MIN, POOL_BUFFER_MAX, PRE_FUND_RATIO, WIN_PROFIT_MULTIPLIER, PLAYER_GROUPS_UNEQUAL
 import simulator_config
 
-def run_simulation(buffer_min=None, buffer_max=None, pre_fund=None, output_path=None):
+def run_simulation(buffer_min=None, buffer_max=None, pre_fund=None, output_path=None, player_groups=None):
+    if player_groups is None:
+        player_groups = PLAYER_GROUPS_UNEQUAL
     # 如果有帶參數，就使用參數，否則使用預設 Config
     buf_min = buffer_min if buffer_min is not None else simulator_config.POOL_BUFFER_MIN
     buf_max = buffer_max if buffer_max is not None else simulator_config.POOL_BUFFER_MAX
@@ -21,7 +23,7 @@ def run_simulation(buffer_min=None, buffer_max=None, pre_fund=None, output_path=
     total_rounds_simulated = 0
     group_idx = 1
     
-    for group in PLAYER_GROUPS:
+    for group in player_groups:
         for i in range(group["count"]):
             player_id = f"Player_G{group_idx}_{i+1}"
             players_data[player_id] = {

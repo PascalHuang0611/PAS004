@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     let currentSystem = 'B';
     let currentConfig = null; // e.g. "buffer_1_3_pre_40"
+    let currentDist = 'unequal'; // "unequal" or "equal"
 
     // 14種已知參數設定
     const bufferRanges = [[1, 3], [1, 10], [1, 20], [1, 40], [10, 20], [10, 30], [20, 40]];
@@ -47,22 +48,30 @@ document.addEventListener("DOMContentLoaded", () => {
         allReports = {};
         
         let successCount = 0;
+        let completeCount = 0;
+        const totalFiles = knownConfigs.length * 2 * 5;
         const fetchPromises = [];
 
         knownConfigs.forEach(config => {
-            ['b', 'c', 'e', 'f', 'g'].forEach(sys => {
-                const path = `reports/${config}/simulation_${sys}_log.json`;
-                const p = fetch(path)
-                    .then(res => {
-                        if (!res.ok) throw new Error("HTTP error " + res.status);
-                        return res.json();
-                    })
-                    .then(data => {
-                        allReports[path] = data;
-                        successCount++;
-                    })
-                    .catch(() => { /* 忽略失敗，可能是 CORS 或檔案不存在 */ });
-                fetchPromises.push(p);
+            ['unequal', 'equal'].forEach(dist => {
+                ['b', 'c', 'e', 'f', 'g'].forEach(sys => {
+                    const path = `reports/${dist}_${config}/simulation_${sys}_log.json`;
+                    const p = fetch(path)
+                        .then(res => {
+                            if (!res.ok) throw new Error("HTTP error " + res.status);
+                            return res.json();
+                        })
+                        .then(data => {
+                            allReports[path] = data;
+                            successCount++;
+                        })
+                        .catch(() => { /* 忽略失敗 */ })
+                        .finally(() => {
+                            completeCount++;
+                            fileNameDisplay.textContent = `嘗試自動讀取報告... (${completeCount}/${totalFiles})`;
+                        });
+                    fetchPromises.push(p);
+                });
             });
         });
 
@@ -91,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         knownConfigs.forEach(config => {
             // 檢查該設定是否至少有一份資料
-            const hasData = allReports[`reports/${config}/simulation_b_log.json`] || allReports[`reports/${config}/simulation_c_log.json`];
+            const hasData = allReports[`reports/${currentDist}_${config}/simulation_b_log.json`] || allReports[`reports/${currentDist}_${config}/simulation_c_log.json`];
             if (!hasData) return;
 
             const btn = document.createElement('button');
@@ -121,10 +130,10 @@ document.addEventListener("DOMContentLoaded", () => {
         loadCurrentSelection();
     }
 
-    // 根據目前的 system 與 config 載入資料
+    // 根據目前的 system, dist 與 config 載入資料
     function loadCurrentSelection() {
         if (!currentConfig) return;
-        const path = `reports/${currentConfig}/simulation_${currentSystem.toLowerCase()}_log.json`;
+        const path = `reports/${currentDist}_${currentConfig}/simulation_${currentSystem.toLowerCase()}_log.json`;
         
         if (allReports[path]) {
             globalData = allReports[path];
@@ -150,6 +159,18 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    // 玩家配置切換器
+    const distBtns = document.querySelectorAll('.dist-btn');
+    distBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            distBtns.forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            currentDist = e.target.dataset.dist;
+            // 可能某些配置沒資料，重整分頁鈕
+            setupUIAfterLoad(); 
+        });
+    });
+
     // 保留手動上傳邏輯
     if (fileInput) {
         fileInput.addEventListener('change', async (event) => {
@@ -159,12 +180,20 @@ document.addEventListener("DOMContentLoaded", () => {
             fileNameDisplay.textContent = '讀取中...';
             allReports = {};
 
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                if (file.name.endsWith('.json')) {
-                    try {
-                        const text = await file.text();
-                        const data = JSON.parse(text);
+            const jsonFiles = Array.from(files).filter(f => f.name.endsWith('.json'));
+            const totalFiles = jsonFiles.length;
+            let loadedCount = 0;
+
+            for (let i = 0; i < jsonFiles.length; i++) {
+                const file = jsonFiles[i];
+                loadedCount++;
+                if (loadedCount % 5 === 0 || loadedCount === totalFiles) {
+                    fileNameDisplay.textContent = `讀取中... (${loadedCount}/${totalFiles})`;
+                }
+                
+                try {
+                    const text = await file.text();
+                    const data = JSON.parse(text);
                         // 嘗試從路徑中重組 "reports/buffer_1_3_pre_40/simulation_b_log.json" 的格式
                         // 避免使用者上傳的資料夾名稱不叫 reports
                         let pathName = file.webkitRelativePath || file.name;
@@ -176,8 +205,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (pathName.includes('_f_log')) system = 'f';
                         if (pathName.includes('_g_log')) system = 'g';
                         let configMatch = pathName.match(/buffer_\d+_\d+_pre_\d+/);
-                        if (configMatch) {
-                            allReports[`reports/${configMatch[0]}/simulation_${system}_log.json`] = data;
+                        let distMatch = pathName.match(/(unequal|equal)_buffer/);
+                        if (configMatch && distMatch) {
+                            let dist = distMatch[1];
+                            allReports[`reports/${dist}_${configMatch[0]}/simulation_${system}_log.json`] = data;
                         } else {
                             // 若無正規格式，就直接存起來 (此情況下頁籤可能不會正常顯示，但這是一個 fallback)
                             allReports[pathName] = data;
@@ -185,7 +216,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     } catch (error) {
                         console.error("Error parsing JSON:", error);
                     }
-                }
             }
 
             if (Object.keys(allReports).length > 0) {

@@ -7,13 +7,18 @@
 # 如果你的「賠2」是指「連本帶利拿回2元」 (等於淨賺1倍)，請將此值改為 1。
 WIN_PROFIT_MULTIPLIER = 1
 
-# 玩家群組設定
-# 你可以設定不同條件的玩家群組，這裡可以任意新增或修改
-# count: 玩家人數, plays: 每人玩幾次, betAmount: 每次下注金額
-PLAYER_GROUPS = [
+# 玩家群組設定 - 不均等分佈
+PLAYER_GROUPS_UNEQUAL = [
     {"count": 100, "plays": 200, "betAmount": 1},
     {"count": 10,  "plays": 200, "betAmount": 5},
     {"count": 2,   "plays": 200, "betAmount": 10}
+]
+
+# 玩家群組設定 - 均等分佈 (每個BET都是100人)
+PLAYER_GROUPS_EQUAL = [
+    {"count": 100, "plays": 200, "betAmount": 1},
+    {"count": 100, "plays": 200, "betAmount": 5},
+    {"count": 100, "plays": 200, "betAmount": 10}
 ]
 
 # ==========================================
