@@ -40,13 +40,13 @@
                     </div>
                 </div>
                 <div class="system-toggle">
-                    <button class="sys-btn active" data-system="B">系統 B</button>
-                    <button class="sys-btn" data-system="C">系統 C</button>
-                    <button class="sys-btn" data-system="D">系統 D</button>
-                    <button class="sys-btn" data-system="E">系統 E</button>
-                    <button class="sys-btn" data-system="F">系統 F</button>
-                    <button class="sys-btn" data-system="G">系統 G</button>
-                    <button class="sys-btn" data-system="H">系統 H</button>
+                    <button class="sys-btn active" data-system="B">系統 B (IGS區間BET池)</button>
+                    <button class="sys-btn" data-system="C">系統 C (純隨機)</button>
+                    <button class="sys-btn" data-system="D">系統 D (UJ個人分BET)</button>
+                    <button class="sys-btn" data-system="E">系統 E (IGS分BET池)</button>
+                    <button class="sys-btn" data-system="F">系統 F (UJ全域分BET)</button>
+                    <button class="sys-btn" data-system="G">系統 G (IGS區間BET單位版)</button>
+                    <button class="sys-btn" data-system="H">系統 H (UJ混合分BET)</button>
                 </div>
                 <div class="tabs-wrapper">
                     <div class="tabs-row">
@@ -134,7 +134,10 @@
         </div>
 
         <div class="table-container">
-            <h2>各玩家 RTP 詳細資料</h2>
+            <h2 style="display: flex; align-items: center; justify-content: space-between;">
+                <span>各玩家 RTP 詳細資料</span>
+                <span id="global-changed-rate" style="font-size: 0.9rem; color: #ef4444; font-weight: 600; display: none;"></span>
+            </h2>
             <div class="table-wrapper">
                 <table id="rtp-table">
                     <thead>
@@ -168,6 +171,10 @@
                     <span>最大連輸</span>
                     <strong id="modal-max-loss" class="negative">0</strong>
                 </div>
+                <div class="stat-box" id="modal-changed-box" style="display: none;">
+                    <span>改判佔比</span>
+                    <strong id="modal-changed-rate" style="color: #ef4444;">0%</strong>
+                </div>
             </div>
             <div class="history-table-wrapper">
                 <table id="history-table">
@@ -175,9 +182,13 @@
                         <tr>
                             <th>全域局數</th>
                             <th>個人局數</th>
+                            <th>原始擲出</th>
                             <th>變動</th>
                             <th>累計利潤</th>
-                            <th>結果</th>
+                            <th>水位餘額</th>
+                            <th>強制改盤</th>
+                            <th>系統判斷</th>
+                            <th>出獎來源</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -187,7 +198,6 @@
             </div>
         </div>
     </div>
-    <script>window.BLIND_MODE = true;</script>
     <script src="script.js"></script>
 </body>
 </html>

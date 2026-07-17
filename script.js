@@ -930,7 +930,20 @@ function showPlayerDetails(playerId) {
         const tr = document.createElement('tr');
         const changeClass = round.change > 0 ? 'positive' : (round.change < 0 ? 'negative' : '');
         const changeText = round.change > 0 ? `+$${round.change}` : `-$${Math.abs(round.change)}`;
-        
+
+        // 盲測模式：只顯示乾淨的結果數據，不透露任何機制相關欄位
+        if (window.BLIND_MODE) {
+            tr.innerHTML = `
+                <td>${round.globalId || '-'}</td>
+                <td>${round.round}</td>
+                <td class="${changeClass}">${changeText}</td>
+                <td>$${round.balanceAfter}</td>
+                <td>${round.result === "Win" ? "贏" : "輸"}</td>
+            `;
+            tbody.appendChild(tr);
+            return;
+        }
+
         let changedTag = '';
         if (round.wasChanged) {
             changedTag = `<span style="color: #ef4444; font-weight: bold;">是 (改判)</span>`;
