@@ -169,6 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         let system = 'b';
                         if (pathName.includes('_c_log')) system = 'c';
                         if (pathName.includes('_e_log')) system = 'e';
+                        if (pathName.includes('_f_log')) system = 'f';
                         let configMatch = pathName.match(/buffer_\d+_\d+_pre_\d+/);
                         if (configMatch) {
                             allReports[`reports/${configMatch[0]}/simulation_${system}_log.json`] = data;
