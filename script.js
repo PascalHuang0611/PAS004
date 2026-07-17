@@ -166,7 +166,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         let pathName = file.webkitRelativePath || file.name;
                         
                         // 我們強制將路徑正規化為我們認識的格式，以配合頁籤邏輯
-                        let system = pathName.includes('_c_log') ? 'c' : 'b';
+                        let system = 'b';
+                        if (pathName.includes('_c_log')) system = 'c';
+                        if (pathName.includes('_e_log')) system = 'e';
                         let configMatch = pathName.match(/buffer_\d+_\d+_pre_\d+/);
                         if (configMatch) {
                             allReports[`reports/${configMatch[0]}/simulation_${system}_log.json`] = data;

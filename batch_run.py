@@ -1,6 +1,7 @@
 import os
 from simulator_b import run_simulation as run_sim_b
 from simulator_c import run_simulation as run_sim_c
+from simulator_e import run_simulation as run_sim_e
 
 def batch_run():
     buffer_ranges = [
@@ -22,6 +23,7 @@ def batch_run():
             
             output_b = os.path.join(reports_dir, dir_name, "simulation_b_log.json")
             output_c = os.path.join(reports_dir, dir_name, "simulation_c_log.json")
+            output_e = os.path.join(reports_dir, dir_name, "simulation_e_log.json")
             
             print(f"\n[{count}/{total}] 執行設定: Buffer {buf_min}~{buf_max}, Pre-fund {pre_fund_pct}%")
             
@@ -32,6 +34,12 @@ def batch_run():
                 output_path=output_b
             )
             run_sim_c(output_path=output_c)
+            run_sim_e(
+                buffer_min=buf_min, 
+                buffer_max=buf_max, 
+                pre_fund=pre_fund, 
+                output_path=output_e
+            )
             count += 1
             
     print("\n所有批次模擬完成！報表已存放於 reports/ 資料夾中。")
