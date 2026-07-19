@@ -103,6 +103,8 @@ document.addEventListener("DOMContentLoaded", () => {
         
         currentConfig = currentConfig || knownConfigs[0];
 
+        initFloatingPanel();
+
         knownConfigs.forEach(config => {
             // 由於改為按需載入，我們預設所有已知配置都存在報表
             const btn = document.createElement('button');
@@ -262,6 +264,133 @@ document.addEventListener("DOMContentLoaded", () => {
                 fileNameDisplay.textContent = '資料夾內沒有找到 JSON 報告';
             }
         });
+    }
+
+    // ==========================================
+    // 懸浮快速切換面板
+    // 所有操作都代理點擊頁首的原始按鈕,狀態單一來源
+    // ==========================================
+    function initFloatingPanel() {
+        if (document.getElementById('fp-fab')) {
+            syncFloatingPanel();
+            return;
+        }
+
+        const fab = document.createElement('button');
+        fab.id = 'fp-fab';
+        fab.title = '快速切換選項';
+        fab.textContent = '🎛';
+        document.body.appendChild(fab);
+
+        const panel = document.createElement('div');
+        panel.id = 'floating-switcher';
+        panel.innerHTML = `
+            <div class="fp-title"><span>快速切換</span><span id="fp-close" title="收合">&times;</span></div>
+            <div class="fp-row"><label>批次</label><select id="fp-run" class="fp-select">
+                <option value="run_1">Run 1</option>
+                <option value="run_2">Run 2</option>
+                <option value="run_3">Run 3</option>
+            </select></div>
+            <div class="fp-row"><label>配置</label><select id="fp-dist" class="fp-select">
+                <option value="unequal">不均等 (100/10/2)</option>
+                <option value="equal">均等 (每BET 100人)</option>
+            </select></div>
+            <div class="fp-row"><label>系統</label><div class="fp-sys" id="fp-sys"></div></div>
+            <div class="fp-row"><label>預墊</label><select id="fp-pre" class="fp-select">
+                <option value="35">35%</option>
+                <option value="65">65%</option>
+                <option value="95">95%</option>
+            </select></div>
+            <div class="fp-row"><label>Buffer</label><select id="fp-buffer" class="fp-select">
+                ${bufferRanges.map(b => `<option value="${b[0]}_${b[1]}">Buffer ${b[0]}~${b[1]}</option>`).join('')}
+            </select></div>
+        `;
+        document.body.appendChild(panel);
+
+        // 系統 B~H 小按鈕
+        const fpSys = panel.querySelector('#fp-sys');
+        document.querySelectorAll('.sys-btn[data-system]').forEach(srcBtn => {
+            const b = document.createElement('button');
+            b.textContent = srcBtn.dataset.system;
+            b.dataset.system = srcBtn.dataset.system;
+            b.addEventListener('click', () => {
+                document.querySelector(`.sys-btn[data-system="${b.dataset.system}"]`).click();
+            });
+            fpSys.appendChild(b);
+        });
+
+        panel.querySelector('#fp-run').addEventListener('change', (e) => {
+            document.querySelector(`.run-btn[data-run="${e.target.value}"]`).click();
+        });
+        panel.querySelector('#fp-dist').addEventListener('change', (e) => {
+            document.querySelector(`.dist-btn[data-dist="${e.target.value}"]`).click();
+        });
+
+        // 預墊/Buffer 變更 → 點擊對應的頁籤按鈕
+        function clickConfigTab() {
+            const pre = panel.querySelector('#fp-pre').value;
+            const buf = panel.querySelector('#fp-buffer').value.replace('_', '~');
+            const container = document.getElementById(`tabs-container-${pre}`);
+            if (!container) return;
+            const target = [...container.querySelectorAll('.tab-btn')]
+                .find(btn => btn.textContent.trim() === `Buffer ${buf}`);
+            if (target) target.click();
+        }
+        panel.querySelector('#fp-pre').addEventListener('change', clickConfigTab);
+        panel.querySelector('#fp-buffer').addEventListener('change', clickConfigTab);
+
+        fab.addEventListener('click', () => {
+            const opening = panel.style.display !== 'block';
+            panel.style.display = opening ? 'block' : 'none';
+            if (opening) syncFloatingPanel();
+        });
+        panel.querySelector('#fp-close').addEventListener('click', () => {
+            panel.style.display = 'none';
+        });
+
+        // 頁首控制區在畫面內時,隱藏懸浮按鈕與面板
+        function updateFabVisibility() {
+            const rect = controlsSection.getBoundingClientRect();
+            const headerVisible = rect.bottom > 0 && rect.top < window.innerHeight;
+            fab.style.display = headerVisible ? 'none' : 'flex';
+            if (headerVisible) panel.style.display = 'none';
+        }
+        window.addEventListener('scroll', updateFabVisibility, { passive: true });
+        window.addEventListener('resize', updateFabVisibility, { passive: true });
+        updateFabVisibility();
+
+        // 使用者直接點頁首按鈕時,同步面板顯示狀態
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.sys-btn, .tab-btn')) {
+                setTimeout(syncFloatingPanel, 0);
+            }
+        });
+
+        syncFloatingPanel();
+    }
+
+    function syncFloatingPanel() {
+        const panel = document.getElementById('floating-switcher');
+        if (!panel) return;
+
+        const activeRun = document.querySelector('.run-btn.active');
+        if (activeRun) panel.querySelector('#fp-run').value = activeRun.dataset.run;
+
+        const activeDist = document.querySelector('.dist-btn.active');
+        if (activeDist) panel.querySelector('#fp-dist').value = activeDist.dataset.dist;
+
+        const activeSys = document.querySelector('.sys-btn.active[data-system]');
+        panel.querySelectorAll('#fp-sys button').forEach(b => {
+            b.classList.toggle('active', !!activeSys && b.dataset.system === activeSys.dataset.system);
+        });
+
+        const activeTab = document.querySelector('.tab-btn.active');
+        if (activeTab) {
+            const pre = activeTab.parentElement.id.replace('tabs-container-', '');
+            panel.querySelector('#fp-pre').value = pre;
+            const m = activeTab.textContent.match(/Buffer (\d+)~(\d+)/);
+            if (m) panel.querySelector('#fp-buffer').value = `${m[1]}_${m[2]}`;
+        }
     }
 
     // 網頁載入時立刻嘗試自動讀取
