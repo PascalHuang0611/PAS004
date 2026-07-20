@@ -5,6 +5,7 @@
     --text-secondary: #94a3b8;
     --accent: #3b82f6;
     --accent-hover: #60a5fa;
+    --primary-color: #6366f1;
     --success: #10b981;
     --danger: #ef4444;
 }
@@ -294,9 +295,9 @@ input[type="file"] {
 }
 
 .tab-btn.active {
-    background: rgba(99, 102, 241, 0.15);
+    background: var(--primary-color);
     border-color: var(--primary-color);
-    color: var(--primary-color);
+    color: #fff;
     font-weight: bold;
 }
 

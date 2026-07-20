@@ -70,25 +70,25 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // 各系統體感評分前三名參數 (依玩家配置區分,順序即名次)
-    // 來源:系統評比閱讀指南.md 的離線分析結果
+    // 各系統參數評分前三名 (依玩家配置區分,順序即名次)
+    // 每個系統只跟自己的 21 組參數比較;來源:系統評比閱讀指南.md 的離線分析結果
     const TOP_CONFIGS = {
         unequal: {
             B: ['buffer_1_10_pre_95', 'buffer_1_10_pre_35', 'buffer_1_10_pre_65'],
-            C: ['buffer_1_20_pre_95', 'buffer_10_20_pre_65', 'buffer_20_40_pre_95'],
+            C: ['buffer_10_20_pre_65', 'buffer_1_10_pre_35', 'buffer_1_20_pre_95'],
             D: ['buffer_1_10_pre_65', 'buffer_1_3_pre_35', 'buffer_1_3_pre_65'],
             E: ['buffer_20_40_pre_95', 'buffer_10_20_pre_95', 'buffer_1_3_pre_95'],
-            F: ['buffer_1_10_pre_65', 'buffer_1_20_pre_65', 'buffer_1_20_pre_35'],
-            G: ['buffer_1_40_pre_35', 'buffer_1_40_pre_65'],
+            F: ['buffer_1_10_pre_65', 'buffer_1_20_pre_65', 'buffer_1_3_pre_65'],
+            G: ['buffer_10_30_pre_65', 'buffer_1_3_pre_95', 'buffer_1_40_pre_35'],
             H: ['buffer_1_3_pre_35', 'buffer_1_3_pre_65', 'buffer_1_3_pre_95']
         },
         equal: {
             B: ['buffer_1_10_pre_95', 'buffer_1_10_pre_35', 'buffer_1_10_pre_65'],
-            C: ['buffer_1_3_pre_65', 'buffer_1_10_pre_65', 'buffer_1_10_pre_35'],
+            C: ['buffer_1_3_pre_65', 'buffer_1_10_pre_35', 'buffer_1_10_pre_65'],
             D: ['buffer_1_3_pre_35', 'buffer_1_10_pre_65', 'buffer_1_3_pre_65'],
             E: ['buffer_1_20_pre_95', 'buffer_1_10_pre_35', 'buffer_10_30_pre_95'],
-            F: ['buffer_1_20_pre_65', 'buffer_1_3_pre_65', 'buffer_1_40_pre_95'],
-            G: ['buffer_1_20_pre_65', 'buffer_1_3_pre_35', 'buffer_1_40_pre_65'],
+            F: ['buffer_1_20_pre_65', 'buffer_1_3_pre_65', 'buffer_10_20_pre_95'],
+            G: ['buffer_1_20_pre_65', 'buffer_20_40_pre_65', 'buffer_1_40_pre_65'],
             H: ['buffer_1_3_pre_35', 'buffer_1_3_pre_65', 'buffer_1_3_pre_95']
         }
     };
