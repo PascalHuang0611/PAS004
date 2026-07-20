@@ -301,23 +301,11 @@ input[type="file"] {
     font-weight: bold;
 }
 
-/* 體感評分前三名參數標色:只改既有邊框與文字顏色,不改任何尺寸 */
-.tab-btn.rank-1:not(.active) {
+/* 建議優先檢視的參數標色 (三組同色不分名次):只改既有邊框與文字顏色,不改任何尺寸 */
+.tab-btn.rank-pick:not(.active) {
     border-color: #fbbf24;
     color: #fbbf24;
     background: rgba(251, 191, 36, 0.08);
-}
-
-.tab-btn.rank-2:not(.active) {
-    border-color: #cbd5e1;
-    color: #cbd5e1;
-    background: rgba(203, 213, 225, 0.08);
-}
-
-.tab-btn.rank-3:not(.active) {
-    border-color: #d97706;
-    color: #d97706;
-    background: rgba(217, 119, 6, 0.08);
 }
 
 #rtp-table tbody tr {
@@ -432,6 +420,27 @@ th.desc .sort-icon::after {
     opacity: 1;
 }
 
+/* 參數比對工具頁 */
+#cmp-table th.cmp-th {
+    white-space: nowrap;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.75rem;
+}
+
+#cmp-table td {
+    white-space: nowrap;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.85rem;
+}
+
+#cmp-table tbody tr.rec-row {
+    background: rgba(251, 191, 36, 0.07);
+}
+
+#cmp-table tbody tr.rec-row:hover {
+    background: rgba(251, 191, 36, 0.12);
+}
+
 /* 右上角版本號 */
 #app-version {
     position: fixed;
@@ -442,6 +451,23 @@ th.desc .sort-icon::after {
     opacity: 0.8;
     pointer-events: none;
     z-index: 1200;
+}
+
+/* 右上角推薦標記來源 (版本號下方) */
+#rec-source-badge {
+    position: fixed;
+    top: 32px;
+    right: 16px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    opacity: 0.8;
+    pointer-events: none;
+    z-index: 1200;
+}
+
+#rec-source-badge.custom {
+    color: #fbbf24;
+    opacity: 1;
 }
 
 /* 懸浮快速切換面板 */

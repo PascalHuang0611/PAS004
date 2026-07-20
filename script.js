@@ -12,8 +12,6 @@ let currentSortAsc = false; // 預設降冪排序
 let currentSystem = 'B';
 let currentRoundLimit = 200; // 顯示前 N 局
 
-const APP_VERSION = '1.0.0'; // 頁面右上角顯示的版本號,升版只改這裡
-
 const CHART_COLORS = {
     1: '#3b82f6',  // Blue
     5: '#10b981',  // Emerald Green
@@ -37,12 +35,6 @@ function hexToRgba(hex, alpha) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    // 右上角版本號
-    const versionTag = document.createElement('div');
-    versionTag.id = 'app-version';
-    versionTag.textContent = `v${APP_VERSION}`;
-    document.body.appendChild(versionTag);
-
     const fileInput = document.getElementById('file-upload');
     const fileNameDisplay = document.getElementById('file-name');
     
@@ -78,44 +70,76 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // 各系統參數評分前三名 (依玩家配置區分,順序即名次)
+    // 各系統建議優先檢視的三組參數 (依玩家配置區分,不分名次)
     // 每個系統只跟自己的 21 組參數比較;來源:系統評比閱讀指南.md 的離線分析結果
     const TOP_CONFIGS = {
         unequal: {
-            B: ['buffer_1_10_pre_95', 'buffer_1_10_pre_35', 'buffer_1_10_pre_65'],
+            B: ['buffer_1_10_pre_95', 'buffer_1_10_pre_35', 'buffer_1_3_pre_65'],
             C: ['buffer_10_20_pre_65', 'buffer_1_10_pre_35', 'buffer_1_20_pre_95'],
             D: ['buffer_1_10_pre_65', 'buffer_1_3_pre_35', 'buffer_1_3_pre_65'],
-            E: ['buffer_20_40_pre_95', 'buffer_10_20_pre_95', 'buffer_1_3_pre_95'],
-            F: ['buffer_1_10_pre_65', 'buffer_1_20_pre_65', 'buffer_1_3_pre_65'],
+            E: ['buffer_20_40_pre_95', 'buffer_1_3_pre_95', 'buffer_10_20_pre_95'],
+            F: ['buffer_1_10_pre_65', 'buffer_1_3_pre_65', 'buffer_1_20_pre_65'],
             G: ['buffer_10_30_pre_65', 'buffer_1_3_pre_95', 'buffer_1_40_pre_35'],
             H: ['buffer_1_3_pre_35', 'buffer_1_3_pre_65', 'buffer_1_3_pre_95']
         },
         equal: {
             B: ['buffer_1_10_pre_95', 'buffer_1_10_pre_35', 'buffer_1_10_pre_65'],
             C: ['buffer_1_3_pre_65', 'buffer_1_10_pre_35', 'buffer_1_10_pre_65'],
-            D: ['buffer_1_3_pre_35', 'buffer_1_10_pre_65', 'buffer_1_3_pre_65'],
+            D: ['buffer_1_10_pre_65', 'buffer_1_3_pre_35', 'buffer_1_3_pre_65'],
             E: ['buffer_1_20_pre_95', 'buffer_1_10_pre_35', 'buffer_10_30_pre_95'],
             F: ['buffer_1_20_pre_65', 'buffer_1_3_pre_65', 'buffer_10_20_pre_95'],
             G: ['buffer_1_20_pre_65', 'buffer_20_40_pre_65', 'buffer_1_40_pre_65'],
-            H: ['buffer_1_3_pre_35', 'buffer_1_3_pre_65', 'buffer_1_3_pre_95']
+            H: ['buffer_1_3_pre_35', 'buffer_1_3_pre_65', 'buffer_1_10_pre_65']
         }
     };
 
-    // 依目前的系統與玩家配置,替 Buffer 頁籤標上前三名顏色
+    // 讀取比對工具頁儲存的自訂權重結果 (無或無效則回傳 null → 使用預設)
+    function getCustomTopConfigs() {
+        try {
+            const raw = localStorage.getItem('pas004_custom_weights');
+            if (!raw) return null;
+            const stored = JSON.parse(raw);
+            return (stored && stored.topConfigs) ? stored.topConfigs : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // 依目前的系統與玩家配置,標出建議優先檢視的參數 (三組不分名次,統一同色)
+    // 有本地自訂權重時採用自訂結果,否則用預設;右上角同步標示來源
     function applyRankHighlight() {
-        const ranks = (TOP_CONFIGS[currentDist] || {})[currentSystem] || [];
+        const custom = getCustomTopConfigs();
+        const source = custom || TOP_CONFIGS;
+        const picks = (source[currentDist] || {})[currentSystem] || [];
+        const tip = custom ? '本系統建議優先檢視的參數組合 (自訂權重)' : '本系統建議優先檢視的參數組合 (預設權重)';
+
         document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('rank-1', 'rank-2', 'rank-3');
+            btn.classList.remove('rank-pick');
             btn.removeAttribute('title');
         });
-        ranks.forEach((cfg, i) => {
+        picks.forEach(cfg => {
             const btn = document.querySelector(`.tab-btn[data-config="${cfg}"]`);
             if (btn) {
-                btn.classList.add(`rank-${i + 1}`);
-                btn.title = `本系統建議優先檢視:第 ${i + 1} 名參數`;
+                btn.classList.add('rank-pick');
+                btn.title = tip;
             }
         });
+
+        // 右上角來源標示
+        let badge = document.getElementById('rec-source-badge');
+        if (!badge) {
+            badge = document.createElement('div');
+            badge.id = 'rec-source-badge';
+            document.body.appendChild(badge);
+        }
+        badge.textContent = custom ? '⭐ 推薦標記:自訂權重' : '⭐ 推薦標記:預設權重';
+        badge.classList.toggle('custom', !!custom);
     }
+
+    // 比對工具頁在其他分頁修改自訂權重時,即時同步標記
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'pas004_custom_weights') applyRankHighlight();
+    });
 
     // 改為按需載入 (Lazy Load) 以避免一次抓取 294 份巨大報表導致瀏覽器當機
     async function tryAutoLoad() {

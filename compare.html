@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>參數比對工具 (Parameter Comparison)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container" style="max-width: 1500px;">
+        <header>
+            <h1>Parameter Comparison</h1>
+            <p>全部參數組合的統計總表:可篩選系統、點欄位標題排序,自由比對任何幾組參數</p>
+
+            <div class="controls-section" style="display: flex;">
+                <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; width: 100%;">
+                    <div class="system-toggle">
+                        <span style="font-weight: bold; margin-right: 10px; color: var(--text-secondary); line-height: 2.2;">玩家配置:</span>
+                        <button class="sys-btn cmp-dist-btn active" data-dist="unequal">👥 不均等配置 (100/10/2)</button>
+                        <button class="sys-btn cmp-dist-btn" data-dist="equal">👥 均等配置 (每BET 100人)</button>
+                    </div>
+                    <div class="system-toggle">
+                        <span style="font-weight: bold; margin-right: 10px; color: var(--text-secondary); line-height: 2.2;">系統:</span>
+                        <button class="sys-btn cmp-sys-btn active" data-system="B">B</button>
+                        <button class="sys-btn cmp-sys-btn active" data-system="C">C</button>
+                        <button class="sys-btn cmp-sys-btn active" data-system="D">D</button>
+                        <button class="sys-btn cmp-sys-btn active" data-system="E">E</button>
+                        <button class="sys-btn cmp-sys-btn active" data-system="F">F</button>
+                        <button class="sys-btn cmp-sys-btn active" data-system="G">G</button>
+                        <button class="sys-btn cmp-sys-btn active" data-system="H">H</button>
+                    </div>
+                    <div class="system-toggle">
+                        <button class="sys-btn" id="cmp-only-rec" title="⭐ 是每個系統建議優先檢視的三組參數(只跟該系統自己比較,三組不分名次)。開啟後表格只顯示這些參數">⭐ 只顯示建議優先檢視的參數</button>
+                        <button class="sys-btn" id="cmp-only-sel" title="先勾選表格最左欄的核取方塊(可跨系統任選幾組),再按此鈕即只顯示勾選的參數,精確比對">☑ 只顯示勾選的參數</button>
+                        <button class="sys-btn" id="cmp-clear-sel" title="清除所有勾選,並關閉「只顯示勾選的參數」">✖ 清除勾選</button>
+                    </div>
+                </div>
+            </div>
+
+            <details style="margin-top: 0.8rem; text-align: left; max-width: 900px; margin-left: auto; margin-right: auto; color: var(--text-secondary); font-size: 0.88rem;">
+                <summary style="cursor: pointer; font-weight: 600;">📐 綜合評分的計算標準與權重調整(點擊展開)</summary>
+                <div style="padding: 0.8rem 1rem 0.2rem;">
+                    <p style="margin: 0 0 0.5rem;">綜合評分 = 以下各項「指標 × 權重」加總,<strong>分數越低越好</strong>(各項單位皆為百分點)。<strong>權重可直接修改</strong>,綜合評分、排序與 ⭐ 推薦標記會即時重算:</p>
+                    <div id="cmp-weights"><!-- 權重輸入列由 JS 動態生成 --></div>
+                    <div style="margin: 0.6rem 0;">
+                        <button class="sys-btn" id="cmp-apply-weights" style="border: 1px solid #fbbf24; color: #fbbf24;">✔ 套用並儲存</button>
+                        <button class="sys-btn" id="cmp-reset-weights" style="border: 1px solid rgba(255,255,255,0.2);">↩ 恢復預設權重</button>
+                        <span id="cmp-weights-status" style="margin-left: 0.6rem;"></span>
+                    </div>
+                    <p style="margin: 0 0 0.5rem;"><strong>輸贏規律性的定義</strong>:把每連續 5 局(或 10 局)的輸贏排列視為一種「樣態」,以滑動視窗統計全體玩家所有樣態的出現分布。若輸贏毫無規律,分布應接近與整體勝率一致的隨機分布;若有固定循環(例如每贏一把就固定連輸兩把),分布會集中在少數樣態。指標以資訊熵計算:0% = 與純隨機無異,100% = 完全固定循環,越高代表越容易被玩家摸清、懲罰越重。</p>
+                    <p style="margin: 0;">註:預設權重為預先設定的主觀取捨,評分唯一用途是在<strong>每個系統自己的 21 組參數內</strong>初步圈出三組值得先看的參數;分數不用於系統之間的比較,實際優劣請以完整數據自行判斷。<br>修改權重後需按「✔ 套用並儲存」才會生效,自訂結果只儲存在你自己的瀏覽器中;儀表板網頁的琥珀色推薦標記會跟著改用你的自訂結果,並在右上角標示目前是預設還是自訂,「↩ 恢復預設權重」可隨時清除。</p>
+                </div>
+            </details>
+
+            <div class="upload-section" id="cmp-upload-section" style="display: none;">
+                <label for="cmp-file-upload" class="custom-file-upload">
+                    📄 手動選擇 compare_data.json
+                </label>
+                <input type="file" id="cmp-file-upload" accept=".json,application/json">
+                <span id="cmp-upload-hint">本地環境無法自動讀取,請手動選擇資料檔</span>
+            </div>
+        </header>
+
+        <div class="table-container">
+            <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                <span>參數統計總表</span>
+                <span id="cmp-row-count" style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 400;"></span>
+            </h2>
+            <div class="table-wrapper" style="max-height: 75vh;">
+                <table id="cmp-table">
+                    <thead><!-- 由 JS 動態生成 --></thead>
+                    <tbody><!-- 由 JS 動態生成 --></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="version.js"></script>
+    <script src="compare.js"></script>
+</body>
+</html>
