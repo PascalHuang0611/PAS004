@@ -432,6 +432,18 @@ th.desc .sort-icon::after {
     opacity: 1;
 }
 
+/* 右上角版本號 */
+#app-version {
+    position: fixed;
+    top: 12px;
+    right: 16px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    opacity: 0.8;
+    pointer-events: none;
+    z-index: 1200;
+}
+
 /* 懸浮快速切換面板 */
 #fp-fab {
     position: fixed;

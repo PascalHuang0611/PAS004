@@ -12,6 +12,8 @@ let currentSortAsc = false; // 預設降冪排序
 let currentSystem = 'B';
 let currentRoundLimit = 200; // 顯示前 N 局
 
+const APP_VERSION = '1.0.0'; // 頁面右上角顯示的版本號,升版只改這裡
+
 const CHART_COLORS = {
     1: '#3b82f6',  // Blue
     5: '#10b981',  // Emerald Green
@@ -35,6 +37,12 @@ function hexToRgba(hex, alpha) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    // 右上角版本號
+    const versionTag = document.createElement('div');
+    versionTag.id = 'app-version';
+    versionTag.textContent = `v${APP_VERSION}`;
+    document.body.appendChild(versionTag);
+
     const fileInput = document.getElementById('file-upload');
     const fileNameDisplay = document.getElementById('file-name');
     
