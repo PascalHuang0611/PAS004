@@ -170,48 +170,18 @@ document.addEventListener("DOMContentLoaded", () => {
         applyRoundLimit();
     }
 
-    // 依 currentRoundLimit 將原始資料截斷成「前 N 局視圖」後重算所有統計
+    // 依 currentRoundLimit 將原始資料截斷成「前 N 局視圖」
+    // rtp/maxWin/maxLoss 等統計欄位一律由 processData 從截斷後的 history 重算,此處不預算
     function applyRoundLimit() {
         const N = currentRoundLimit;
         globalData = rawData.map(p => {
             const hist = p.history.slice(0, N);
-            
-            const totalPlays = hist.length;
-            const finalBalance = totalPlays > 0 ? hist[totalPlays - 1].balanceAfter : 0;
-            const totalBet = totalPlays * p.bet;
-            // 總贏分 = 最終結餘 + 總押注
-            const totalWin = finalBalance + totalBet;
-            const rtp = totalBet > 0 ? (totalWin / totalBet) * 100 : 0;
-            
-            let winCount = 0;
-            let currentWinStreak = 0;
-            let currentLossStreak = 0;
-            let maxWinStreak = 0;
-            let maxLossStreak = 0;
-            
-            hist.forEach(h => {
-                if (h.result === "Win") {
-                    winCount++;
-                    currentWinStreak++;
-                    currentLossStreak = 0;
-                    if (currentWinStreak > maxWinStreak) maxWinStreak = currentWinStreak;
-                } else {
-                    currentLossStreak++;
-                    currentWinStreak = 0;
-                    if (currentLossStreak > maxLossStreak) maxLossStreak = currentLossStreak;
-                }
-            });
-
             return {
                 ...p,
                 history: hist,
-                totalPlays: totalPlays,
-                finalBalance: finalBalance,
-                rtp: rtp,
-                winCount: winCount,
-                winRate: totalPlays > 0 ? (winCount / totalPlays) * 100 : 0,
-                maxWin: maxWinStreak,
-                maxLoss: maxLossStreak
+                totalPlays: hist.length,
+                // balanceAfter 是累計值,截斷後的損益直接取最後一筆
+                finalBalance: hist.length ? hist[hist.length - 1].balanceAfter : 0
             };
         });
         // 重設排序狀態
