@@ -5,10 +5,12 @@ let currentRtpDistChart = null;
 let currentMaxWinDistChart = null;
 let currentMaxLossDistChart = null;
 let globalData = [];
+let rawData = []; // 未截斷的原始報表資料
 let allReports = {};
 let currentSortCol = null;
 let currentSortAsc = false; // 預設降冪排序
 let currentSystem = 'B';
+let currentRoundLimit = 200; // 顯示前 N 局
 
 const CHART_COLORS = {
     1: '#3b82f6',  // Blue
@@ -164,7 +166,54 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderData(data) {
-        globalData = data;
+        rawData = data;
+        applyRoundLimit();
+    }
+
+    // 依 currentRoundLimit 將原始資料截斷成「前 N 局視圖」後重算所有統計
+    function applyRoundLimit() {
+        const N = currentRoundLimit;
+        globalData = rawData.map(p => {
+            const hist = p.history.slice(0, N);
+            
+            const totalPlays = hist.length;
+            const finalBalance = totalPlays > 0 ? hist[totalPlays - 1].balanceAfter : 0;
+            const totalBet = totalPlays * p.bet;
+            // 總贏分 = 最終結餘 + 總押注
+            const totalWin = finalBalance + totalBet;
+            const rtp = totalBet > 0 ? (totalWin / totalBet) * 100 : 0;
+            
+            let winCount = 0;
+            let currentWinStreak = 0;
+            let currentLossStreak = 0;
+            let maxWinStreak = 0;
+            let maxLossStreak = 0;
+            
+            hist.forEach(h => {
+                if (h.result === "Win") {
+                    winCount++;
+                    currentWinStreak++;
+                    currentLossStreak = 0;
+                    if (currentWinStreak > maxWinStreak) maxWinStreak = currentWinStreak;
+                } else {
+                    currentLossStreak++;
+                    currentWinStreak = 0;
+                    if (currentLossStreak > maxLossStreak) maxLossStreak = currentLossStreak;
+                }
+            });
+
+            return {
+                ...p,
+                history: hist,
+                totalPlays: totalPlays,
+                finalBalance: finalBalance,
+                rtp: rtp,
+                winCount: winCount,
+                winRate: totalPlays > 0 ? (winCount / totalPlays) * 100 : 0,
+                maxWin: maxWinStreak,
+                maxLoss: maxLossStreak
+            };
+        });
         // 重設排序狀態
         currentSortCol = null;
         currentSortAsc = false;
@@ -192,6 +241,17 @@ document.addEventListener("DOMContentLoaded", () => {
             e.target.classList.add('active');
             currentRun = e.target.dataset.run;
             loadCurrentSelection();
+        });
+    });
+
+    // 顯示局數切換器 (純前端截斷,不需重新抓資料)
+    const roundsBtns = document.querySelectorAll('.rounds-btn');
+    roundsBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            roundsBtns.forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            currentRoundLimit = parseInt(e.target.dataset.rounds);
+            if (rawData.length > 0) applyRoundLimit();
         });
     });
 
@@ -304,6 +364,9 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="fp-row"><label>Buffer</label><select id="fp-buffer" class="fp-select">
                 ${bufferRanges.map(b => `<option value="${b[0]}_${b[1]}">Buffer ${b[0]}~${b[1]}</option>`).join('')}
             </select></div>
+            <div class="fp-row"><label>局數</label><select id="fp-rounds" class="fp-select">
+                ${[5, 10, 15, 20, 50, 100, 200].map(n => `<option value="${n}">前 ${n} 局</option>`).join('')}
+            </select></div>
         `;
         document.body.appendChild(panel);
 
@@ -338,6 +401,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         panel.querySelector('#fp-pre').addEventListener('change', clickConfigTab);
         panel.querySelector('#fp-buffer').addEventListener('change', clickConfigTab);
+
+        panel.querySelector('#fp-rounds').addEventListener('change', (e) => {
+            const target = document.querySelector(`.rounds-btn[data-rounds="${e.target.value}"]`);
+            if (target) target.click();
+        });
 
         fab.addEventListener('click', () => {
             const opening = panel.style.display !== 'block';
@@ -391,6 +459,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const m = activeTab.textContent.match(/Buffer (\d+)~(\d+)/);
             if (m) panel.querySelector('#fp-buffer').value = `${m[1]}_${m[2]}`;
         }
+
+        const activeRounds = document.querySelector('.rounds-btn.active');
+        if (activeRounds) panel.querySelector('#fp-rounds').value = activeRounds.dataset.rounds;
     }
 
     // 網頁載入時立刻嘗試自動讀取
