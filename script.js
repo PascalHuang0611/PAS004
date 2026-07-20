@@ -70,6 +70,45 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    // 各系統體感評分前三名參數 (依玩家配置區分,順序即名次)
+    // 來源:系統評比閱讀指南.md 的離線分析結果
+    const TOP_CONFIGS = {
+        unequal: {
+            B: ['buffer_1_10_pre_95', 'buffer_1_10_pre_35', 'buffer_1_10_pre_65'],
+            C: ['buffer_1_20_pre_95', 'buffer_10_20_pre_65', 'buffer_20_40_pre_95'],
+            D: ['buffer_1_10_pre_65', 'buffer_1_3_pre_35', 'buffer_1_3_pre_65'],
+            E: ['buffer_20_40_pre_95', 'buffer_10_20_pre_95', 'buffer_1_3_pre_95'],
+            F: ['buffer_1_10_pre_65', 'buffer_1_20_pre_65', 'buffer_1_20_pre_35'],
+            G: ['buffer_1_40_pre_35', 'buffer_1_40_pre_65'],
+            H: ['buffer_1_3_pre_35', 'buffer_1_3_pre_65', 'buffer_1_3_pre_95']
+        },
+        equal: {
+            B: ['buffer_1_10_pre_95', 'buffer_1_10_pre_35', 'buffer_1_10_pre_65'],
+            C: ['buffer_1_3_pre_65', 'buffer_1_10_pre_65', 'buffer_1_10_pre_35'],
+            D: ['buffer_1_3_pre_35', 'buffer_1_10_pre_65', 'buffer_1_3_pre_65'],
+            E: ['buffer_1_20_pre_95', 'buffer_1_10_pre_35', 'buffer_10_30_pre_95'],
+            F: ['buffer_1_20_pre_65', 'buffer_1_3_pre_65', 'buffer_1_40_pre_95'],
+            G: ['buffer_1_20_pre_65', 'buffer_1_3_pre_35', 'buffer_1_40_pre_65'],
+            H: ['buffer_1_3_pre_35', 'buffer_1_3_pre_65', 'buffer_1_3_pre_95']
+        }
+    };
+
+    // 依目前的系統與玩家配置,替 Buffer 頁籤標上前三名顏色
+    function applyRankHighlight() {
+        const ranks = (TOP_CONFIGS[currentDist] || {})[currentSystem] || [];
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('rank-1', 'rank-2', 'rank-3');
+            btn.removeAttribute('title');
+        });
+        ranks.forEach((cfg, i) => {
+            const btn = document.querySelector(`.tab-btn[data-config="${cfg}"]`);
+            if (btn) {
+                btn.classList.add(`rank-${i + 1}`);
+                btn.title = `本系統建議優先檢視:第 ${i + 1} 名參數`;
+            }
+        });
+    }
+
     // 改為按需載入 (Lazy Load) 以避免一次抓取 294 份巨大報表導致瀏覽器當機
     async function tryAutoLoad() {
         fileNameDisplay.textContent = '嘗試自動連線並讀取報表...';
@@ -111,7 +150,8 @@ document.addEventListener("DOMContentLoaded", () => {
             // 由於改為按需載入，我們預設所有已知配置都存在報表
             const btn = document.createElement('button');
             btn.className = `tab-btn ${config === currentConfig ? 'active' : ''}`;
-            
+            btn.dataset.config = config;
+
             // 格式化名稱顯示
             const parts = config.split('_');
             const name = `Buffer ${parts[1]}~${parts[2]}`;
@@ -139,6 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 根據目前的 system, dist 與 config 載入資料 (改為按需 fetch)
     async function loadCurrentSelection() {
         if (!currentConfig) return;
+        applyRankHighlight();
         const path = `reports/${currentRun}/${currentDist}_${currentConfig}/simulation_${currentSystem.toLowerCase()}_log.json`;
         
         fileNameDisplay.textContent = `正在讀取報表: ${path} ...`;

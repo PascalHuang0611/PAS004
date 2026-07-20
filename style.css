@@ -300,6 +300,25 @@ input[type="file"] {
     font-weight: bold;
 }
 
+/* 體感評分前三名參數標色:只改既有邊框與文字顏色,不改任何尺寸 */
+.tab-btn.rank-1:not(.active) {
+    border-color: #fbbf24;
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.08);
+}
+
+.tab-btn.rank-2:not(.active) {
+    border-color: #cbd5e1;
+    color: #cbd5e1;
+    background: rgba(203, 213, 225, 0.08);
+}
+
+.tab-btn.rank-3:not(.active) {
+    border-color: #d97706;
+    color: #d97706;
+    background: rgba(217, 119, 6, 0.08);
+}
+
 #rtp-table tbody tr {
     cursor: pointer;
 }
