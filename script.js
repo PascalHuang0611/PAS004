@@ -70,6 +70,16 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    // 盲測版:每次進入隨機起點 (隨機系統 × 隨機參數),避免所有人都從同一個系統看起的錨定效應
+    if (window.BLIND_MODE) {
+        const systems = ['B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        currentSystem = systems[Math.floor(Math.random() * systems.length)];
+        currentConfig = knownConfigs[Math.floor(Math.random() * knownConfigs.length)];
+        document.querySelectorAll('.sys-btn[data-system]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.system === currentSystem);
+        });
+    }
+
     // 各系統建議優先檢視的三組參數 (依玩家配置區分,不分名次)
     // 每個系統只跟自己的 21 組參數比較;來源:系統評比閱讀指南.md 的離線分析結果
     const TOP_CONFIGS = {
